@@ -1,0 +1,127 @@
+openapi: 3.1.0
+info:
+  title: Magnit Translator API
+  version: 3.0.0
+  description: Node.js API с SQLite, продуктовыми событиями и генерацией текста через OpenAI Responses API.
+servers:
+  - url: http://localhost:8080/api
+    description: Docker Compose через Nginx
+  - url: http://localhost:3001/api
+    description: Backend напрямую
+paths:
+  /health:
+    get:
+      summary: Проверить backend и конфигурацию OpenAI
+      responses:
+        "200":
+          description: Backend доступен
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, openaiConfigured]
+                properties:
+                  ok: { type: boolean, const: true }
+                  openaiConfigured: { type: boolean }
+  /translate:
+    post:
+      summary: Сформулировать вклад пользователя через OpenAI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, minLength: 2, maxLength: 200 }
+                userId: { type: string, maxLength: 100 }
+      responses:
+        "200":
+          description: Ответ модели
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sourceText, translatedText]
+                properties:
+                  sourceText: { type: string }
+                  translatedText: { type: string, maxLength: 100 }
+        "400": { $ref: '#/components/responses/Error' }
+        "429": { $ref: '#/components/responses/Error' }
+        "502": { $ref: '#/components/responses/Error' }
+        "503": { $ref: '#/components/responses/Error' }
+        "504": { $ref: '#/components/responses/Error' }
+  /logs:
+    post:
+      summary: Сохранить продуктовое событие в SQLite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateLogRequest' }
+      responses:
+        "201":
+          description: Событие сохранено
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id: { type: integer }
+        "400": { $ref: '#/components/responses/Error' }
+  /users/{userId}/logs:
+    get:
+      summary: Получить события пользователя
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 500, default: 100 }
+      responses:
+        "200":
+          description: Список событий
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [logs]
+                properties:
+                  logs:
+                    type: array
+                    items: { $ref: '#/components/schemas/Log' }
+components:
+  schemas:
+    CreateLogRequest:
+      type: object
+      required: [userId, eventType]
+      properties:
+        userId: { type: string, maxLength: 100 }
+        eventType: { type: string, maxLength: 100 }
+        page: { type: [string, "null"], maxLength: 100 }
+        metadata: { type: object, additionalProperties: true }
+    Log:
+      type: object
+      required: [id, user_id, event_type, metadata, created_at]
+      properties:
+        id: { type: integer }
+        user_id: { type: string }
+        event_type: { type: string }
+        page: { type: [string, "null"] }
+        metadata: { type: object, additionalProperties: true }
+        created_at: { type: string }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+  responses:
+    Error:
+      description: Ошибка запроса или внешнего API
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

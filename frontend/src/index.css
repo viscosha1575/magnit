@@ -1,0 +1,85 @@
+@font-face {
+  font-family: 'Arha Magnit';
+  src: url('/fonts/Arha%20Font%20Family/CopyrightBolditalicStudio-ArhaRegularTrial-BF6764ee7f00a5e.otf') format('opentype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Arha Magnit';
+  src: url('/fonts/Arha%20Font%20Family/CopyrightBolditalicStudio-ArhaMediumTrial-BF6764ee7ee3a17.otf') format('opentype');
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Arha Magnit';
+  src: url('/fonts/Arha%20Font%20Family/CopyrightBolditalicStudio-ArhaSemiboldTrial-BF6764ee7eea214.otf') format('opentype');
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Arha Magnit';
+  src: url('/fonts/Arha%20Font%20Family/CopyrightBolditalicStudio-ArhaBoldTrial-BF6764ee7ec8ea8.otf') format('opentype');
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Arha Magnit';
+  src: url('/fonts/Arha%20Font%20Family/CopyrightBolditalicStudio-ArhaExtraboldTrial-BF6764ee7ed613e.otf') format('opentype');
+  font-style: normal;
+  font-weight: 800;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Arha Magnit';
+  src: url('/fonts/Arha%20Font%20Family/CopyrightBolditalicStudio-ArhaBlackTrial-BF6764ee7ec9aa0.otf') format('opentype');
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+}
+
+:root {
+  font-family: 'Arha Magnit', Arial, Helvetica, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: 'Arha Magnit', Arial, Helvetica, sans-serif;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: linear-gradient(135deg, #ff5614 0%, #ff1410 100%);
+}
+
+html,
+body {
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: none;
+}
+
+button { -webkit-tap-highlight-color: transparent; }

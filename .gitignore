@@ -1,0 +1,27 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated builds
+node_modules/
+dist/
+dist-ssr/
+
+# Runtime data
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Logs and temporary files
+*.log
+*.backup-*
+*.tgz
+.DS_Store
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
