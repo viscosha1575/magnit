@@ -146,6 +146,11 @@ function App() {
 
   const navigateToPage = useCallback((nextPage, { replace = false } = {}) => {
     if (pageRef.current === nextPage) return
+    logEvent('navigation', pageRef.current, {
+      from: pageRef.current,
+      to: nextPage,
+      method: replace ? 'replace' : 'push',
+    })
     const state = { ...window.history.state, magnitPage: nextPage }
     window.history[replace ? 'replaceState' : 'pushState'](state, '', window.location.href)
     pageRef.current = nextPage
@@ -160,6 +165,11 @@ function App() {
     const handlePopState = (event) => {
       const previousPage = event.state?.magnitPage
       if (!['intro', 'next', 'third', 'share'].includes(previousPage)) return
+      logEvent('navigation', pageRef.current, {
+        from: pageRef.current,
+        to: previousPage,
+        method: 'browser_history',
+      })
       pageRef.current = previousPage
       setIsLeaving(false)
       setPage(previousPage)
@@ -274,7 +284,10 @@ function App() {
       animateTranslation(payload.translatedText)
       logEvent('translation_succeeded', 'next', { resultLength: payload.translatedText.length, trigger })
     } catch (error) {
-      if (error.name === 'AbortError') return
+      if (error.name === 'AbortError') {
+        logEvent('translation_cancelled', 'next', { trigger })
+        return
+      }
       setTranslationError(error.code === 'BLOCKED_INPUT'
         ? 'Переводчик споткнулся об этот запрос. Введи реальную профессию из сферы работы в «Магнит»'
         : 'Не удалось перевести. Попробуйте ещё раз.')
@@ -329,6 +342,7 @@ function App() {
       logEvent('share_link_copied', pageRef.current)
     } catch {
       setCopyStatus('error')
+      logEvent('share_link_copy_failed', pageRef.current)
     }
 
     window.clearTimeout(copyStatusTimerRef.current)
@@ -354,6 +368,7 @@ function App() {
 
     const fileName = 'moy-vklad-v-magnit.png'
     setDownloadStatus('loading')
+    logEvent('result_download_started', pageRef.current, { platform: isIOSDevice() ? 'ios' : 'browser' })
     try {
       await document.fonts?.ready
       const [titleImage, starImage, logoImage, audienceImage] = await Promise.all([
@@ -463,6 +478,7 @@ function App() {
         } catch (error) {
           if (error.name === 'AbortError') {
             setDownloadStatus('idle')
+            logEvent('result_share_cancelled', pageRef.current, { stage: 'file' })
             return
           }
         }
@@ -477,6 +493,7 @@ function App() {
           } catch (error) {
             if (error.name === 'AbortError') {
               setDownloadStatus('idle')
+              logEvent('result_share_cancelled', pageRef.current, { stage: 'link' })
               return
             }
             saveBlob(blob, fileName)
@@ -490,6 +507,7 @@ function App() {
       logEvent(isIOSDevice() ? 'result_shared' : 'result_downloaded', pageRef.current)
     } catch {
       setDownloadStatus('error')
+      logEvent('result_download_failed', pageRef.current)
     }
 
     window.setTimeout(() => setDownloadStatus('idle'), 2500)
@@ -560,13 +578,19 @@ function App() {
     },
   ]
 
-  const changeImpactSlide = (nextIndex) => {
+  const changeImpactSlide = (nextIndex, source = 'unknown') => {
     const normalizedIndex = (nextIndex + impactSlides.length) % impactSlides.length
     if (normalizedIndex === impactSlide || impactTransition) return
     const direction = normalizedIndex > impactSlide || (impactSlide === 2 && normalizedIndex === 0) ? 'next' : 'prev'
     setSlideDirection(direction)
     setImpactTransition({ from: impactSlide, to: normalizedIndex, direction })
     setImpactSlide(normalizedIndex)
+    logEvent('impact_slide_changed', 'third', {
+      from: impactSlide,
+      to: normalizedIndex,
+      direction,
+      source,
+    })
   }
 
   const finishImpactSwipe = (clientX) => {
@@ -574,14 +598,16 @@ function App() {
     const distance = clientX - swipeStartX.current
     swipeStartX.current = null
     if (Math.abs(distance) < 40) return
-    changeImpactSlide(impactSlide + (distance < 0 ? 1 : -1))
+    changeImpactSlide(impactSlide + (distance < 0 ? 1 : -1), 'swipe')
   }
 
   const openShare = () => {
     if (!isResultShareable || !translatedText) return
     if (window.matchMedia('(min-width: 900px)').matches) {
       setIsShareModalOpen(true)
+      logEvent('share_opened', 'next', { presentation: 'modal' })
     } else {
+      logEvent('share_opened', 'next', { presentation: 'page' })
       navigateToPage('share')
     }
   }
@@ -673,7 +699,7 @@ function App() {
                 key={slide.title}
                 type="button"
                 aria-label={`Перейти к слайду ${index + 1}`}
-                onClick={() => changeImpactSlide(index)}
+                onClick={() => changeImpactSlide(index, 'dot')}
               />
             ))}
           </div>
@@ -684,6 +710,7 @@ function App() {
               href="https://rabota.magnit.ru/?utm_source=translater-magnit&utm_medium=banner&utm_campaign=drt2026"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => logEvent('vacancies_opened', 'third')}
             >
               К вакансиям
             </a>
@@ -769,6 +796,10 @@ function App() {
               setDisplayedTranslation('')
               setTranslationError('')
               setInputText(event.target.value)
+              logEvent('profession_input_changed', 'next', {
+                length: event.target.value.length,
+                hasProfession: hasProfessionDescription(event.target.value),
+              })
             }}
             onInputBlur={restoreInputFocus}
             onSubmit={handleTranslate}
@@ -781,7 +812,10 @@ function App() {
         {isShareModalOpen && (
           <div className="share-modal" role="dialog" aria-modal="true" aria-label="Поделиться результатом">
             <div className="share-modal__panel">
-              <button className="share-modal__close" type="button" aria-label="Закрыть" onClick={() => setIsShareModalOpen(false)}>×</button>
+              <button className="share-modal__close" type="button" aria-label="Закрыть" onClick={() => {
+                setIsShareModalOpen(false)
+                logEvent('share_closed', 'next', { presentation: 'modal' })
+              }}>×</button>
               <div className="share-modal__preview">
                 <img className="share-modal__preview-title" src="/svg/your-work2.svg" alt="" />
                 <div className="share-modal__preview-subtitle">

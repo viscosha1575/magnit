@@ -61,6 +61,24 @@ export function startAutomaticLogging(getPage) {
     })
   }
 
+  const handlePageHide = () => {
+    logEvent('session_end', getPage(), {
+      visibility: document.visibilityState,
+    })
+  }
+
+  const handleVisibilityChange = () => {
+    logEvent('visibility_changed', getPage(), {
+      visibility: document.visibilityState,
+    })
+  }
+
   document.addEventListener('click', handleClick)
-  return () => document.removeEventListener('click', handleClick)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('pagehide', handlePageHide)
+  return () => {
+    document.removeEventListener('click', handleClick)
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+    window.removeEventListener('pagehide', handlePageHide)
+  }
 }
