@@ -116,10 +116,28 @@ function TranslatorCard({
             onKeyDown={(event) => {
               if (showProfessionHint) return
               const input = event.currentTarget
-              if (event.key === 'Backspace' && input.selectionStart <= requiredPrefix.length) {
+              if (!['Backspace', 'Delete'].includes(event.key)) return
+
+              const selectionStart = input.selectionStart
+              const selectionEnd = input.selectionEnd
+              const hasSelection = selectionStart !== selectionEnd
+
+              if (hasSelection && selectionStart < requiredPrefix.length) {
+                event.preventDefault()
+                if (selectionEnd <= requiredPrefix.length) return
+
+                input.value = requiredPrefix + input.value.slice(selectionEnd)
+                onInputChange({ target: input, currentTarget: input })
+                requestAnimationFrame(() => {
+                  input.setSelectionRange(requiredPrefix.length, requiredPrefix.length)
+                })
+                return
+              }
+
+              if (event.key === 'Backspace' && selectionStart <= requiredPrefix.length) {
                 event.preventDefault()
               }
-              if (event.key === 'Delete' && input.selectionStart < requiredPrefix.length) {
+              if (event.key === 'Delete' && selectionStart < requiredPrefix.length) {
                 event.preventDefault()
               }
             }}
