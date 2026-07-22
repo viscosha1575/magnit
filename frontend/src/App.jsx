@@ -109,7 +109,7 @@ function App() {
   const impactCardsViewportRef = useRef(null)
   const impactCardsRef = useRef(null)
   const copyStatusTimerRef = useRef(null)
-  const lastTranslatedSourceRef = useRef('Я работаю в логистике')
+  const lastTranslatedSourceRef = useRef('')
 
   const navigateToPage = useCallback((nextPage, { replace = false } = {}) => {
     if (pageRef.current === nextPage) return
