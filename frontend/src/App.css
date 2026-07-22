@@ -206,6 +206,11 @@
 .impact__desktop-mark { display: none; }
 
 @media (max-width: 899px) {
+  .third-page,
+  .impact {
+    height: 100svh;
+  }
+
   .impact {
     display: grid;
     grid-template-rows: auto auto auto auto;
