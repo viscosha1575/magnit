@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import TranslatorCard from './components/TranslatorCard.jsx'
 import { getUserId, logEvent, startAutomaticLogging } from './lib/logger.js'
+import { warmSecondaryArtwork } from './lib/warmAssets.js'
 
 const ThirdPage = lazy(() => import('./components/ThirdPage.jsx'))
 const SharePage = lazy(() => import('./components/SharePage.jsx'))
@@ -217,6 +218,7 @@ function App() {
   }, [page])
 
   useEffect(() => startAutomaticLogging(() => pageRef.current), [])
+  useEffect(() => warmSecondaryArtwork(), [])
 
   useEffect(() => {
     const openTestPanel = async (event) => {
