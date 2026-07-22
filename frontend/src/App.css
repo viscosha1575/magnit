@@ -257,9 +257,10 @@
 
 @media (max-width: 899px) {
   .impact__heading img {
-    width: 118%;
+    width: 124%;
     max-width: none;
-    height: 118%;
+    height: 124%;
+    transform: translateY(2%);
   }
 }
 
