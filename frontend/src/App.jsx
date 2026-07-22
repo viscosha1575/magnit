@@ -106,6 +106,10 @@ const getInitialInputCaretPosition = (value, hasUserEdited) => (
   !hasUserEdited && value === 'Я работаю в логистике' ? 'Я работаю '.length : null
 )
 
+const hasProfessionDescription = (value) => (
+  value.replace(/^я\s+работаю\b/i, '').trim().length >= 2
+)
+
 function App() {
   const [page, setPage] = useState(() => {
     const historyPage = window.history.state?.magnitPage
@@ -237,7 +241,7 @@ function App() {
 
   const requestTranslation = useCallback(async (rawText, trigger = 'manual') => {
     const text = rawText.trim()
-    if (text.length < 2 || text.length > 200) return
+    if (!hasProfessionDescription(text) || text.length > 200) return
 
     translationRequestRef.current?.abort()
     const controller = new AbortController()
@@ -496,7 +500,7 @@ function App() {
     if (page !== 'next') return undefined
 
     const text = inputText.trim()
-    if (text.length < 2 || text.length > 200 || text === lastTranslatedSourceRef.current) return undefined
+    if (!hasProfessionDescription(text) || text.length > 200 || text === lastTranslatedSourceRef.current) return undefined
 
     autoTranslateTimerRef.current = window.setTimeout(() => {
       requestTranslation(text, 'automatic')
@@ -751,6 +755,7 @@ function App() {
             displayedTranslation={displayedTranslation}
             translationError={translationError}
             isTranslating={isTranslating}
+            canTranslate={hasProfessionDescription(inputText)}
             canShare={isResultShareable}
             onInputChange={(event) => {
               window.clearTimeout(autoTranslateTimerRef.current)

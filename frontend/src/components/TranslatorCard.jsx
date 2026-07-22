@@ -7,6 +7,7 @@ function TranslatorCard({
   displayedTranslation,
   translationError,
   isTranslating,
+  canTranslate,
   canShare,
   onInputChange,
   onInputBlur,
@@ -188,7 +189,7 @@ function TranslatorCard({
           <button className="result-card__next" type="button" aria-label="Перейти на следующую страницу" onClick={onNext}>
             <img className="result-card__star" src="/svg/star-icon.svg" alt="" />
           </button>
-          <button className="result-card__translate" type="submit" disabled={isTranslating}>Перевести</button>
+          <button className="result-card__translate" type="submit" disabled={isTranslating || !canTranslate}>Перевести</button>
         </div>
 
           <button className="translator__join" type="button" onClick={onNext}>Присоединиться к команде</button>
