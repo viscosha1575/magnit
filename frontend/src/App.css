@@ -882,8 +882,8 @@
   animation: hero-content-reveal 720ms cubic-bezier(.16, 1, .3, 1) both;
 }
 
-.hero__button { animation-delay: 4.35s; }
-.hero__desktop-mark { animation-delay: 2.82s; }
+.hero__button { animation-delay: 3.9s; }
+.hero__desktop-mark { animation-delay: 2.4s; }
 
 .hero__title > span,
 .hero__copy span {
@@ -892,21 +892,21 @@
   animation: hero-line-reveal 560ms cubic-bezier(.16, 1, .3, 1) both;
 }
 
-.hero__title > span:nth-child(1) { animation-delay: 2.55s; }
-.hero__title > span:nth-child(2) { animation-delay: 2.68s; }
-.hero__title > span:nth-child(3) { animation-delay: 2.81s; }
+.hero__title > span:nth-child(1) { animation-delay: 2.15s; }
+.hero__title > span:nth-child(2) { animation-delay: 2.27s; }
+.hero__title > span:nth-child(3) { animation-delay: 2.39s; }
 
-.hero__copy p:first-child span:nth-child(1) { animation-delay: 3.02s; }
-.hero__copy p:first-child span:nth-child(2) { animation-delay: 3.11s; }
-.hero__copy p:first-child span:nth-child(3) { animation-delay: 3.20s; }
-.hero__copy p:first-child span:nth-child(4) { animation-delay: 3.29s; }
-.hero__copy p:nth-child(2) span:nth-child(1) { animation-delay: 3.38s; }
-.hero__copy p:nth-child(2) span:nth-child(2) { animation-delay: 3.47s; }
-.hero__copy p:nth-child(2) span:nth-child(3) { animation-delay: 3.56s; }
-.hero__copy p:nth-child(2) span:nth-child(4) { animation-delay: 3.65s; }
-.hero__copy p:nth-child(2) span:nth-child(5) { animation-delay: 3.74s; }
-.hero__copy p:nth-child(2) span:nth-child(6) { animation-delay: 3.83s; }
-.hero__copy p:nth-child(2) span:nth-child(7) { animation-delay: 3.92s; }
+.hero__copy p:first-child span:nth-child(1) { animation-delay: 2.58s; }
+.hero__copy p:first-child span:nth-child(2) { animation-delay: 2.67s; }
+.hero__copy p:first-child span:nth-child(3) { animation-delay: 2.76s; }
+.hero__copy p:first-child span:nth-child(4) { animation-delay: 2.85s; }
+.hero__copy p:nth-child(2) span:nth-child(1) { animation-delay: 2.94s; }
+.hero__copy p:nth-child(2) span:nth-child(2) { animation-delay: 3.03s; }
+.hero__copy p:nth-child(2) span:nth-child(3) { animation-delay: 3.12s; }
+.hero__copy p:nth-child(2) span:nth-child(4) { animation-delay: 3.21s; }
+.hero__copy p:nth-child(2) span:nth-child(5) { animation-delay: 3.30s; }
+.hero__copy p:nth-child(2) span:nth-child(6) { animation-delay: 3.39s; }
+.hero__copy p:nth-child(2) span:nth-child(7) { animation-delay: 3.48s; }
 
 @keyframes hero-content-reveal {
   from {
@@ -1028,7 +1028,7 @@
   width: clamp(20rem, 86vw, 29rem);
   opacity: .65;
   transform: translateX(-52%) rotate(-4deg) scale(.95);
-  animation: marker-reveal 1.05s cubic-bezier(.62, 0, .32, 1) .18s forwards;
+  animation: marker-reveal .9s cubic-bezier(.62, 0, .32, 1) .15s forwards;
 }
 
 .hero__brush--bottom {
@@ -1036,7 +1036,7 @@
   width: clamp(23rem, 99vw, 34rem);
   opacity: .65;
   transform: translateX(-51%) rotate(3deg) scale(.95);
-  animation: marker-reveal 1.15s cubic-bezier(.62, 0, .32, 1) 1.32s forwards;
+  animation: marker-reveal 1s cubic-bezier(.62, 0, .32, 1) .98s forwards;
 }
 
 .hero__brush--glow {
@@ -1052,8 +1052,8 @@
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
 }
-.hero__brush--top.hero__brush--glow { animation: marker-glow 850ms ease-out 2.55s forwards; }
-.hero__brush--bottom.hero__brush--glow { animation: marker-glow 900ms ease-out 3.15s forwards; }
+.hero__brush--top.hero__brush--glow { animation: marker-glow 850ms ease-out 2.15s forwards; }
+.hero__brush--bottom.hero__brush--glow { animation: marker-glow 900ms ease-out 2.65s forwards; }
 
 @keyframes marker-glow {
   from {
@@ -1099,7 +1099,7 @@
   transform: translate(-50%, -50%);
   pointer-events: none;
   opacity: 0;
-  animation: hero-background-reveal 760ms ease-out 2.45s forwards;
+  animation: hero-background-reveal 760ms ease-out 2.05s forwards;
 }
 
 @keyframes hero-background-reveal {
@@ -1225,11 +1225,11 @@
   }
   .hero__desktop-art--top {
     clip-path: inset(0 100% 0 0);
-    animation: desktop-word-reveal 1.05s cubic-bezier(.62, 0, .32, 1) .18s forwards;
+    animation: desktop-word-reveal .9s cubic-bezier(.62, 0, .32, 1) .15s forwards;
   }
   .hero__desktop-art--bottom {
     clip-path: inset(0 100% 0 0);
-    animation: desktop-word-reveal 1.15s cubic-bezier(.62, 0, .32, 1) 1.33s forwards;
+    animation: desktop-word-reveal 1s cubic-bezier(.62, 0, .32, 1) .98s forwards;
   }
   .hero__brush { display: none; }
   .hero__headline {
