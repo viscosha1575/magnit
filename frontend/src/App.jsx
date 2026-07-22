@@ -897,7 +897,7 @@ function App() {
           <img src="/svg/star2.svg?v=20260722" alt="" />
         </div>
         <div className="hero__headline">
-          <img className="hero__brush hero__brush--top" src="/svg/your.svg?v=20260722" alt="" />
+          <img className="hero__brush hero__brush--top" src="/svg/your.svg?v=20260722" alt="" fetchPriority="high" />
           <img className="hero__brush hero__brush--bottom" src="/svg/work.svg?v=20260722" alt="" />
           <h1 className="hero__title">
             <span><img className="hero__title-star-desktop" src="/svg/star2.svg?v=20260722" alt="" /> влияет</span>
