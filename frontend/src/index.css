@@ -74,7 +74,7 @@ body,
   overflow: hidden;
   overscroll-behavior: none;
   background: linear-gradient(135deg, #ff5614 0%, #ff1410 100%);
-  background-color: #ff2f11;
+  background-color: #ff5614;
 }
 
 html,
@@ -85,6 +85,6 @@ body {
   overscroll-behavior-y: none;
 }
 
-html { background-color: #ff2f11; }
+html { background-color: #ff5614; }
 
 button { -webkit-tap-highlight-color: transparent; }
