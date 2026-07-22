@@ -1,6 +1,27 @@
 const USER_ID_KEY = 'magnit_user_id'
 const UTM_KEY = 'magnit_utm_attribution'
 const API_URL = import.meta.env.VITE_API_URL || ''
+const pendingLogs = []
+let flushTimer = null
+
+function flushLogs() {
+  window.clearTimeout(flushTimer)
+  flushTimer = null
+  pendingLogs.splice(0).forEach((payload) => {
+    fetch(`${API_URL}/api/logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    }).catch(() => {})
+  })
+}
+
+function scheduleLog(payload) {
+  pendingLogs.push(payload)
+  if (flushTimer !== null) return
+  flushTimer = window.setTimeout(flushLogs, document.readyState === 'complete' ? 2500 : 4000)
+}
 
 function getUtmAttribution() {
   const parameters = new URLSearchParams(window.location.search)
@@ -65,12 +86,7 @@ export function logEvent(eventType, page, metadata = {}) {
     },
   })
 
-  fetch(`${API_URL}/api/logs`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: payload,
-    keepalive: true,
-  }).catch(() => {})
+  scheduleLog(payload)
 }
 
 export function startAutomaticLogging(getPage) {
@@ -94,6 +110,7 @@ export function startAutomaticLogging(getPage) {
     logEvent('session_end', getPage(), {
       visibility: document.visibilityState,
     })
+    flushLogs()
   }
 
   const handleVisibilityChange = () => {

@@ -1,33 +1,33 @@
 @font-face {
   font-family: 'Arha Magnit';
-  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/ArhaMagnit-Regular.otf') format('opentype');
+  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/woff2/ArhaMagnit-Regular.woff2') format('woff2');
   font-style: normal;
   font-weight: 400;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'Arha Magnit';
-  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/ArhaMagnit-Medium.otf') format('opentype');
+  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/woff2/ArhaMagnit-Medium.woff2') format('woff2');
   font-style: normal;
   font-weight: 500;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'Arha Magnit';
-  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/ArhaMagnit-Semibold.otf') format('opentype');
+  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/woff2/ArhaMagnit-Semibold.woff2') format('woff2');
   font-style: normal;
   font-weight: 600;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'Arha Magnit';
-  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/ArhaMagnit-Bold.otf') format('opentype');
+  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/woff2/ArhaMagnit-Bold.woff2') format('woff2');
   font-style: normal;
   font-weight: 700;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
@@ -35,7 +35,7 @@
   src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/ArhaMagnit-Extrabold.otf') format('opentype');
   font-style: normal;
   font-weight: 800;
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
@@ -43,7 +43,7 @@
   src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/ArhaMagnit-Black.otf') format('opentype');
   font-style: normal;
   font-weight: 900;
-  font-display: block;
+  font-display: swap;
 }
 
 :root {
