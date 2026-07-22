@@ -60,6 +60,9 @@
 
 .third-page__circles {
   opacity: 0;
+}
+
+.third-page__circles--ready {
   animation: third-page-background-reveal 760ms ease-out 120ms forwards;
 }
 
