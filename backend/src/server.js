@@ -1,5 +1,4 @@
 import http from 'node:http'
-import { randomUUID } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -66,38 +65,22 @@ const openAiApiKey = process.env.OPENAI_API_KEY || ''
 const openAiModel = process.env.OPENAI_MODEL || 'gpt-5.4-mini'
 const unknownGroup = translationConfig.groups.find((group) => group.vacancy === 'Вакансия не найдена')
 const blockedGroup = translationConfig.groups.find((group) => group.vacancy === 'Вакансии из стоп-листа')
-const fallbackVariants = unknownGroup.entries.map((entry) => entry.approvedAnswer)
 const blockedResponse = blockedGroup.entries[0].approvedAnswer
 const factCatalog = translationConfig.groups.filter(
   (group) => !['Вакансия не найдена', 'Вакансии из стоп-листа'].includes(group.vacancy),
 )
-const translationInstructions = `Ты — редактор проекта «Твоя работа влияет на жизнь миллионов».
+const professionCatalog = factCatalog.map((group, id) => ({ id, vacancy: group.vacancy }))
+const translationInstructions = `Ты — строгий классификатор профессий проекта «Твоя работа влияет на жизнь миллионов».
 
-Преобразуй описание профессии сотрудника в короткую фразу, строго опираясь на переданную фактуру из Excel.
+Работай только по этому алгоритму:
+1. Определи профессию в запросе пользователя.
+2. Если профессия соответствует одной из переданных групп вакансий, верни только числовой ID этой группы.
+3. Если профессия не найдена, непонятна или запрос не является профессией, верни только NOT_FOUND.
+4. Стоп-слова проверяются системой до этого запроса и получают отдельный копирайт. Не пытайся самостоятельно обрабатывать или переосмысливать их.
 
-Алгоритм:
-1. Найди в фактуре наиболее подходящую вакансию или группу вакансий.
-2. Выбери одну из связанных с ней записей «Ценности и смыслы».
-3. Сформулируй ответ, который передаёт именно выбранные ценности и смыслы.
-4. Утверждённый ответ и дополнительный факт из той же записи используй как ориентир по содержанию и тону.
-5. Не смешивай смыслы разных вакансий и не добавляй ценности, которых нет в выбранной записи.
+Запрещено писать готовый ответ, перефразировать утверждённые ответы, придумывать профессию или добавлять пояснения.
 
-Требования:
-— пиши от первого лица;
-— начинай со слова «Я»;
-— показывай не должность, а результат работы;
-— используй конкретные и понятные формулировки;
-— длина ответа — примерно от 55 до 130 символов;
-— одно предложение без точки в конце;
-— не используй списки, пояснения и рекламные лозунги;
-— не повторяй исходное описание;
-— не придумывай факты, цифры, аудитории или эффекты, которых нет в выбранной записи;
-— слово «Магнит» используй только тогда, когда оно естественно следует из выбранной фактуры; обязательного упоминания бренда нет;
-— название бренда всегда пиши только как «Магнит» в русских кавычках и сохраняй эту форму без изменений независимо от предлога и падежа;
-— для одной профессии каждый раз выбирай другую связанную запись или создавай новую формулировку того же смысла;
-— если профессия непонятна, бессмысленна или не соответствует ни одной группе, верни ОДИН из fallback-вариантов, указанных во входе.
-
-Верни только готовую фразу.`
+Формат ответа: только целое число из списка либо NOT_FOUND.`
 
 const normalizeForSafety = (value) => value
   .toLowerCase()
@@ -141,10 +124,18 @@ function extractResponseText(payload) {
   return ''
 }
 
-const normalizeBrandName = (value) => value.replace(
-  /[«"]?Магнит(?:ом|а|е|у)?[»"]?(?![а-яё])/gi,
-  '«Магнит»',
-)
+const groupsByVacancy = new Map(translationConfig.groups.map((group) => [group.vacancy, group]))
+
+function extractSelection(payload) {
+  const raw = extractResponseText(payload).trim()
+  try {
+    const selection = JSON.parse(raw)
+    if (typeof selection?.vacancy === 'string' && typeof selection?.answer === 'string') return selection
+  } catch {
+    return null
+  }
+  return null
+}
 
 async function translateContribution(text) {
   if (!openAiApiKey) {
@@ -155,8 +146,9 @@ async function translateContribution(text) {
 
   const sourceKey = normalizeSourceKey(text)
   const previousTranslations = getRecentTranslations.all(sourceKey).map((row) => row.translated_text)
+  const lastTranslation = previousTranslations[0] || ''
   const excluded = previousTranslations.length
-    ? `\nНе повторяй эти предыдущие ответы:\n${previousTranslations.map((value) => `— ${value}`).join('\n')}`
+    ? `\nНе повторяй предыдущий ответ:\n— ${lastTranslation}`
     : ''
   const fallbackOffset = Math.floor(Math.random() * fallbackVariants.length)
   const rotatedFallbacks = fallbackVariants.map((_, index) => fallbackVariants[(index + fallbackOffset) % fallbackVariants.length])
@@ -172,8 +164,11 @@ async function translateContribution(text) {
       body: JSON.stringify({
         model: openAiModel,
         instructions: translationInstructions,
-        input: `Описание работы сотрудника:\n${text}\n\nФактура по вакансиям из Excel (vacancy → meaning → approvedAnswer; additionalFact — крайний столбец):\n${JSON.stringify(factCatalog)}\n\nFallback-варианты для непонятной профессии:\n${rotatedFallbacks.map((value) => `— ${value}`).join('\n')}${excluded}\nИдентификатор нового варианта: ${randomUUID()}\nПопытка: ${attempt + 1}`,
-        max_output_tokens: 160,
+        input: `Описание работы сотрудника:\n${text}\n\nФактура по вакансиям из Excel. Разрешено возвращать только точный approvedAnswer из выбранной группы:\n${JSON.stringify([
+          ...factCatalog,
+          { ...unknownGroup, entries: rotatedFallbacks.map((approvedAnswer) => ({ approvedAnswer })) },
+        ])}${excluded}\nИдентификатор выбора: ${randomUUID()}\nПопытка: ${attempt + 1}`,
+        max_output_tokens: 320,
       }),
       signal: AbortSignal.timeout(20_000),
     })
@@ -185,25 +180,38 @@ async function translateContribution(text) {
     }
 
     const payload = await apiResponse.json()
-    const candidate = normalizeBrandName(extractResponseText(payload))
-      .replace(/\s+/g, ' ')
-      .trim()
-      .replace(/^[«"“]+|[»"”]+$/g, '')
-      .replace(/[.!?]+$/g, '')
-      .slice(0, 160)
-      .trim()
+    const selection = extractSelection(payload)
+    if (!selection) continue
+    const selectedGroup = groupsByVacancy.get(selection.vacancy)
+    if (!selectedGroup || selectedGroup === blockedGroup) continue
+    const candidate = selectedGroup.entries
+      .map((entry) => entry.approvedAnswer)
+      .find((answer) => answer === selection.answer)
     if (!candidate) continue
 
-    const duplicate = previousTranslations.some((value) => value.toLowerCase() === candidate.toLowerCase())
-    if (!duplicate) {
+    if (candidate !== lastTranslation) {
       finalText = candidate
+      break
+    }
+
+    const alternative = selectedGroup.entries
+      .map((entry) => entry.approvedAnswer)
+      .find((answer) => answer !== lastTranslation)
+    if (alternative) {
+      finalText = alternative
       break
     }
   }
 
+  // Если у найденной профессии закончились уникальные утверждённые варианты
+  // (например, в Excel для неё пока только один ответ), не повторяем его:
+  // возвращаем дословный нейтральный копирайт из группы «Вакансия не найдена».
   if (!finalText) {
-    const error = new Error('OpenAI API did not return a unique response')
-    error.status = 502
+    finalText = rotatedFallbacks.find((answer) => !previousTranslations.includes(answer)) || ''
+  }
+  if (!finalText) {
+    const error = new Error('No unused approved answer is available for this profession')
+    error.status = 409
     throw error
   }
   insertTranslation.run(sourceKey, text, finalText)
