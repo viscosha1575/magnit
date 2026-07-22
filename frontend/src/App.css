@@ -253,6 +253,11 @@
     height: 100svh;
   }
 
+  .third-page .impact__heading {
+    opacity: 1;
+    animation: none;
+  }
+
   .third-page .impact__heading h2 {
     opacity: 0;
     animation: impact-heading-title-reveal 520ms cubic-bezier(.16, 1, .3, 1) 2.15s forwards;
