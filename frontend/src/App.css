@@ -168,14 +168,14 @@
 .impact__heading h2 { position: relative; z-index: 1; margin: 0; font-size: clamp(2.2rem, 8.5vw, 3.6rem); font-weight: 700; line-height: .96; grid-area: 1 / 1; }
 .impact__heading h2 span { display: block; white-space: nowrap; }
 .impact__title--desktop { display: none; }
-.impact__card { position: relative; width: 100%; min-height: 0; aspect-ratio: 340 / 260; overflow: hidden; border-radius: clamp(1rem, 4vw, 1.5rem); color: #e5001c; background: transparent; container-type: size; touch-action: pan-y; user-select: none; }
+.impact__card { position: relative; width: 100%; min-height: 0; aspect-ratio: 340 / 260; overflow: hidden; border-radius: clamp(1rem, 4vw, 1.5rem); color: #e5001c; background: transparent; container-type: inline-size; touch-action: pan-y; user-select: none; }
 .impact__slide { position: absolute; inset: 0; display: grid; min-width: 0; min-height: 0; padding: 5% 6% 8%; overflow: hidden; border-radius: inherit; place-content: center; background: #fff; will-change: transform; }
 .impact__slide--in.impact__slide--next { animation: impact-card-in-next 420ms cubic-bezier(.22,.8,.3,1) both; }
 .impact__slide--in.impact__slide--prev { animation: impact-card-in-prev 420ms cubic-bezier(.22,.8,.3,1) both; }
 .impact__slide--out.impact__slide--next { animation: impact-card-out-next 420ms cubic-bezier(.22,.8,.3,1) both; }
 .impact__slide--out.impact__slide--prev { animation: impact-card-out-prev 420ms cubic-bezier(.22,.8,.3,1) both; }
-.impact__card h3 { margin: 0 0 min(3.5cqw, 3.5cqh); font-size: min(13cqw, 15cqh); line-height: 1; }
-.impact__card p { margin: 0; color: #e30613; text-align: center; font-family: 'Arha Magnit', Arial, sans-serif; font-size: min(5.7cqw, 5.7cqh, 19px); font-style: normal; font-weight: 500; line-height: 110%; overflow-wrap: anywhere; }
+.impact__card h3 { margin: 0 0 2.68cqw; font-size: 11.5cqw; line-height: 1; }
+.impact__card p { margin: 0; color: #e30613; text-align: center; font-family: 'Arha Magnit', Arial, sans-serif; font-size: min(4.36cqw, 19px); font-style: normal; font-weight: 500; line-height: 110%; overflow-wrap: anywhere; }
 .impact__card strong { font-weight: 500; }
 .impact__dots { display: flex; margin: clamp(1rem, 2.5vh, 2rem) 0; gap: clamp(.4rem, 1.8vw, .8rem); }
 .impact__dots button { width: .56rem; height: .56rem; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.38); transition: background-color 220ms ease, transform 220ms ease; cursor: pointer; }
