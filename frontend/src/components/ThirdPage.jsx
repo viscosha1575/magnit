@@ -17,7 +17,6 @@ export default function ThirdPage({
   const [isHeadingFontReady, setIsHeadingFontReady] = useState(
     () => !document.fonts || document.fonts.check('700 48px "Arha Magnit"'),
   )
-  const [isBackgroundReady, setIsBackgroundReady] = useState(false)
 
   useLayoutEffect(() => {
     if (isHeadingFontReady || !document.fonts) return undefined
@@ -52,15 +51,10 @@ export default function ThirdPage({
   }, [cardsRef, viewportRef])
 
   return (
-    <main className={`third-page page-enter${isHeadingFontReady ? ' third-page--font-ready' : ''}`}>
+    <main className={`third-page${isHeadingFontReady ? ' third-page--font-ready' : ''}`}>
       <picture aria-hidden="true">
         <source media="(min-width: 900px)" srcSet="/svg/circles2-desktop.svg?v=20260722" />
-        <img
-          className={`third-page__circles${isBackgroundReady ? ' third-page__circles--ready' : ''}`}
-          src="/svg/circles.svg?v=20260722"
-          alt=""
-          onLoad={() => setIsBackgroundReady(true)}
-        />
+        <img className="third-page__circles" src="/svg/circles2.svg?v=20260722" alt="" />
       </picture>
       <section className="impact">
         <div className="impact__desktop-mark" aria-hidden="true">
