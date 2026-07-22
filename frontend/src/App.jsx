@@ -427,7 +427,7 @@ function App() {
       context.restore()
       context.fillStyle = '#fff'
       context.font = '500 28px "Arha Magnit", Arial'
-      context.fillText('«Магнит»', -174, -108)
+      context.fillText('Магнит', -174, -108)
       context.fillStyle = '#fff'
       context.beginPath()
       context.roundRect(-230, -76, 460, 210, 32)
