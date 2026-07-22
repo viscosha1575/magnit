@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react'
 import './ShareCards.css'
 
 function ShareCards({
@@ -13,6 +14,72 @@ function ShareCards({
   sourceValue,
   resultValue,
 }) {
+  const sourcePanelRef = useRef(null)
+  const sourceCopyRef = useRef(null)
+  const resultPanelRef = useRef(null)
+  const resultCopyRef = useRef(null)
+
+  useLayoutEffect(() => {
+    const targets = [
+      [sourcePanelRef.current, sourceCopyRef.current, 8],
+      [resultPanelRef.current, resultCopyRef.current, 7],
+    ].filter(([panel, copy]) => panel && copy)
+    if (!targets.length) return undefined
+
+    let animationFrame = 0
+    const fitText = (panel, copy, minimumSize) => {
+      copy.style.removeProperty('font-size')
+      const maximumSize = Number.parseFloat(window.getComputedStyle(copy).fontSize)
+      const panelStyle = window.getComputedStyle(panel)
+      const availableWidth = panel.clientWidth
+        - Number.parseFloat(panelStyle.paddingLeft)
+        - Number.parseFloat(panelStyle.paddingRight)
+      const availableHeight = panel.clientHeight
+        - Number.parseFloat(panelStyle.paddingTop)
+        - Number.parseFloat(panelStyle.paddingBottom)
+      if (!maximumSize || availableWidth <= 0 || availableHeight <= 0) return
+
+      const fits = () => (
+        copy.scrollWidth <= availableWidth + 1
+        && copy.scrollHeight <= availableHeight + 1
+      )
+      copy.style.fontSize = `${maximumSize}px`
+      if (fits()) return
+
+      let low = Math.min(minimumSize, maximumSize)
+      let high = maximumSize
+      let best = low
+      copy.style.fontSize = `${low}px`
+      for (let iteration = 0; iteration < 12; iteration += 1) {
+        const middle = (low + high) / 2
+        copy.style.fontSize = `${middle}px`
+        if (fits()) {
+          best = middle
+          low = middle
+        } else {
+          high = middle
+        }
+      }
+      copy.style.fontSize = `${best}px`
+    }
+
+    const fitAllText = () => {
+      window.cancelAnimationFrame(animationFrame)
+      animationFrame = window.requestAnimationFrame(() => {
+        targets.forEach(([panel, copy, minimumSize]) => fitText(panel, copy, minimumSize))
+      })
+    }
+    const observer = new ResizeObserver(fitAllText)
+    targets.forEach(([panel]) => observer.observe(panel))
+    document.fonts?.ready.then(fitAllText)
+    fitAllText()
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame)
+      observer.disconnect()
+    }
+  }, [sourceValue, resultValue])
+
   const renderLines = (value) => value.split('\n').map((line, index) => (
     <span key={`${line}-${index}`}>{index > 0 && <br />}{line}</span>
   ))
@@ -24,9 +91,9 @@ function ShareCards({
           <img src="/svg/all.svg" alt="" />
           {audience}
         </div>
-        <p className="share-stack__panel share-stack__source-text">
+        <p ref={sourcePanelRef} className="share-stack__panel share-stack__source-text">
           {sourceValue ? (
-            <span className="share-stack__source-copy share-stack__source-copy--dynamic">{renderLines(sourceValue)}</span>
+            <span ref={sourceCopyRef} className="share-stack__source-copy share-stack__source-copy--dynamic">{renderLines(sourceValue)}</span>
           ) : (
             <span className="share-stack__source-copy">
               {sourceText}<br /><span className="share-stack__source-accent">
@@ -48,9 +115,9 @@ function ShareCards({
             <img src="/svg/magnit.svg" alt="" />
             {brand}
           </div>
-          <p className="share-stack__panel share-stack__result-text">
+          <p ref={resultPanelRef} className="share-stack__panel share-stack__result-text">
             {resultValue ? (
-              <span className="share-stack__result-copy--dynamic">{resultValue}</span>
+              <span ref={resultCopyRef} className="share-stack__result-copy--dynamic">{resultValue}</span>
             ) : (
               <span>{resultLead}<br /><strong>{resultAccent}</strong><br />{resultLine}<br />{resultEnd}</span>
             )}
