@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { logEvent } from '../lib/logger.js'
 
 export default function ThirdPage({
@@ -14,6 +14,19 @@ export default function ThirdPage({
   viewportRef,
   cardsRef,
 }) {
+  const [isHeadingFontReady, setIsHeadingFontReady] = useState(
+    () => !document.fonts || document.fonts.check('700 48px "Arha Magnit"'),
+  )
+
+  useLayoutEffect(() => {
+    if (isHeadingFontReady || !document.fonts) return undefined
+    let active = true
+    document.fonts.load('700 48px "Arha Magnit"').then(() => {
+      if (active) setIsHeadingFontReady(true)
+    })
+    return () => { active = false }
+  }, [isHeadingFontReady])
+
   useLayoutEffect(() => {
     const viewport = viewportRef.current
     const cards = cardsRef.current
@@ -38,7 +51,7 @@ export default function ThirdPage({
   }, [cardsRef, viewportRef])
 
   return (
-    <main className="third-page page-enter">
+    <main className={`third-page page-enter${isHeadingFontReady ? ' third-page--font-ready' : ''}`}>
       <picture aria-hidden="true">
         <source media="(min-width: 900px)" srcSet="/svg/circles2-desktop.svg?v=20260722" />
         <img className="third-page__circles" src="/svg/circles.svg?v=20260722" alt="" />

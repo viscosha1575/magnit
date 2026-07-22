@@ -78,6 +78,11 @@
 .third-page .impact__dots { animation-delay: 3s; }
 .third-page .impact__actions { animation-delay: 3.2s; }
 
+.third-page:not(.third-page--font-ready) .impact__heading {
+  visibility: hidden;
+  animation-play-state: paused;
+}
+
 @keyframes third-page-background-reveal {
   from { opacity: 0; }
   to { opacity: .75; }
