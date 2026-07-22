@@ -753,7 +753,11 @@ function App() {
             isTranslating={isTranslating}
             canShare={isResultShareable}
             onInputChange={(event) => {
+              window.clearTimeout(autoTranslateTimerRef.current)
+              translationRequestRef.current?.abort()
+              translationRequestRef.current = null
               hasUserEditedInputRef.current = true
+              setIsTranslating(false)
               setIsResultShareable(false)
               setTranslatedText('')
               setDisplayedTranslation('')
