@@ -498,6 +498,7 @@ function App() {
   useEffect(() => {
     window.clearTimeout(autoTranslateTimerRef.current)
     if (page !== 'next') return undefined
+    if (!hasUserEditedInputRef.current) return undefined
 
     const text = inputText.trim()
     if (!hasProfessionDescription(text) || text.length > 200 || text === lastTranslatedSourceRef.current) return undefined
@@ -755,7 +756,7 @@ function App() {
             displayedTranslation={displayedTranslation}
             translationError={translationError}
             isTranslating={isTranslating}
-            canTranslate={hasProfessionDescription(inputText)}
+            canTranslate={hasUserEditedInputRef.current && hasProfessionDescription(inputText)}
             canShare={isResultShareable}
             onInputChange={(event) => {
               window.clearTimeout(autoTranslateTimerRef.current)
