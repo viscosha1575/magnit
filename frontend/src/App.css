@@ -206,18 +206,6 @@
 .impact__desktop-mark { display: none; }
 
 @media (max-width: 899px) {
-  .third-page.page-enter,
-  .third-page__circles,
-  .third-page .impact__heading,
-  .third-page .impact__card,
-  .third-page .impact__dots,
-  .third-page .impact__actions,
-  .third-page .impact__slide {
-    opacity: 1;
-    filter: none;
-    animation: none;
-  }
-
   .impact {
     display: grid;
     grid-template-rows: auto auto auto auto;
