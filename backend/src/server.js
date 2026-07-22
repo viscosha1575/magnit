@@ -92,6 +92,7 @@ const translationInstructions = `Ты — редактор проекта «Тв
 — не повторяй исходное описание;
 — не придумывай факты, цифры, аудитории или эффекты, которых нет в выбранной записи;
 — слово «Магнит» используй только тогда, когда оно естественно следует из выбранной фактуры; обязательного упоминания бренда нет;
+— название бренда всегда пиши только как «Магнит» в русских кавычках и сохраняй эту форму без изменений независимо от предлога и падежа;
 — для одной профессии каждый раз выбирай другую связанную запись или создавай новую формулировку того же смысла;
 — если профессия непонятна, бессмысленна или не соответствует ни одной группе, верни ОДИН из fallback-вариантов, указанных во входе.
 
@@ -137,6 +138,11 @@ function extractResponseText(payload) {
   return ''
 }
 
+const normalizeBrandName = (value) => value.replace(
+  /[«"]?Магнит(?:ом|а|е|у)?[»"]?(?![а-яё])/gi,
+  '«Магнит»',
+)
+
 async function translateContribution(text) {
   if (!openAiApiKey) {
     const error = new Error('OPENAI_API_KEY is not configured')
@@ -176,7 +182,7 @@ async function translateContribution(text) {
     }
 
     const payload = await apiResponse.json()
-    const candidate = extractResponseText(payload)
+    const candidate = normalizeBrandName(extractResponseText(payload))
       .replace(/\s+/g, ' ')
       .trim()
       .replace(/^[«"“]+|[»"”]+$/g, '')

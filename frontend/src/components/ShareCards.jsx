@@ -6,7 +6,7 @@ function ShareCards({
   sourceText = 'Я работаю',
   sourceAccent = 'в логистике',
   sourceCount = '19/200',
-  brand = 'Магнит',
+  brand = '«Магнит»',
   resultLead = 'Я решаю, как',
   resultAccent = '30 000 магазинов',
   resultLine = 'получают товар',

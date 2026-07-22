@@ -243,7 +243,7 @@ function App() {
     } catch (error) {
       if (error.name === 'AbortError') return
       setTranslationError(error.code === 'BLOCKED_INPUT'
-        ? 'Переводчик споткнулся об этот запрос. Введи реальную профессию из сферы работы в «Магните»'
+        ? 'Переводчик споткнулся об этот запрос. Введи реальную профессию из сферы работы в «Магнит»'
         : 'Не удалось перевести. Попробуйте ещё раз.')
       logEvent('translation_failed', 'next', { message: error.message, trigger })
     } finally {
@@ -306,7 +306,7 @@ function App() {
     if (!isResultShareable || !translatedText) return
     const telegramShareUrl = new URL('https://t.me/share/url')
     const sharedTranslation = translatedText.replace(/[.!?]+$/g, '')
-    const telegramText = `${sharedTranslation}. Это моя работа в «Магните»!\n\nЗнаешь, как твоя должность меняет ритейл? Загляни в переводчик и проверь свой вклад.`
+    const telegramText = `${sharedTranslation}. Это моя работа в «Магнит»!\n\nЗнаешь, как твоя должность меняет ритейл? Загляни в переводчик и проверь свой вклад.`
     telegramShareUrl.searchParams.set('url', 'https://translate.magnit.ru/')
     telegramShareUrl.searchParams.set('text', telegramText)
 
@@ -398,7 +398,7 @@ function App() {
       context.restore()
       context.fillStyle = '#fff'
       context.font = '500 28px "Arha Magnit", Arial'
-      context.fillText('Магнит', -174, -108)
+      context.fillText('«Магнит»', -174, -108)
       context.fillStyle = '#fff'
       context.beginPath()
       context.roundRect(-230, -76, 460, 210, 32)
@@ -425,7 +425,7 @@ function App() {
 
         try {
           if (!navigator.canShare || navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], title: 'Мой вклад в Магнит' })
+            await navigator.share({ files: [file], title: 'Мой вклад в «Магнит»' })
             fileShared = true
           }
         } catch (error) {
@@ -438,7 +438,7 @@ function App() {
         if (!fileShared) {
           try {
             await navigator.share({
-              title: 'Мой вклад в Магнит',
+              title: 'Мой вклад в «Магнит»',
               text: 'Узнайте, как звучит ваш вклад в масштабе компании',
               url: window.location.href,
             })
@@ -811,7 +811,7 @@ function App() {
           </picture>
           <div className="hero__copy">
             <p>
-              <span>Работать в «Магните» — значит каждый</span>
+              <span>Работать в «Магнит» — значит каждый</span>
               <span>день влиять на жизнь миллионов людей.</span>
               <span>И иногда мы даже не замечаем, насколько</span>
               <span>велик этот вклад.</span>
@@ -820,20 +820,20 @@ function App() {
               <span>Мы создали этот переводчик, чтобы</span>
               <span>показать: за привычными названиями</span>
               <span>должностей скрываются реальные</span>
-              <span>изменения. Потому что в «Магните» ты</span>
+              <span>изменения. Потому что в «Магнит» ты</span>
               <span>не только развиваешься сам, но и</span>
               <span>создаешь будущее ритейла.</span>
             </p>
           </div>
           <div className="hero__copy hero__copy--desktop">
             <p>
-              <span>Работать в «Магните» — значит каждый день влиять на жизнь миллионов</span>
+              <span>Работать в «Магнит» — значит каждый день влиять на жизнь миллионов</span>
               <span>людей. И иногда мы даже не замечаем, насколько велик этот вклад.</span>
             </p>
             <p>
               <span>Мы создали этот переводчик, чтобы показать: за привычными</span>
               <span>названиями должностей скрываются реальные изменения. Потому что</span>
-              <span>в «Магните» ты не только развиваешься сам, но и создаешь будущее ритейла.</span>
+              <span>в «Магнит» ты не только развиваешься сам, но и создаешь будущее ритейла.</span>
             </p>
           </div>
         </div>
