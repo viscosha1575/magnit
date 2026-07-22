@@ -1,3 +1,4 @@
+import { useLayoutEffect } from 'react'
 import { logEvent } from '../lib/logger.js'
 
 export default function ThirdPage({
@@ -13,6 +14,29 @@ export default function ThirdPage({
   viewportRef,
   cardsRef,
 }) {
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current
+    const cards = cardsRef.current
+    if (!viewport || !cards) return undefined
+
+    const fitCards = () => {
+      if (window.innerWidth < 900) return
+      const naturalWidth = cards.offsetWidth
+      const naturalHeight = cards.offsetHeight
+      if (!naturalWidth || !naturalHeight || !viewport.clientWidth || !viewport.clientHeight) return
+      const scale = Math.min(1.2, viewport.clientWidth / naturalWidth, viewport.clientHeight / naturalHeight)
+      viewport.style.setProperty('--impact-cards-scale', String(Math.max(.1, scale)))
+    }
+
+    const observer = new ResizeObserver(fitCards)
+    observer.observe(viewport)
+    observer.observe(cards)
+    fitCards()
+    document.fonts?.ready.then(fitCards)
+
+    return () => observer.disconnect()
+  }, [cardsRef, viewportRef])
+
   return (
     <main className="third-page page-enter">
       <picture aria-hidden="true">
