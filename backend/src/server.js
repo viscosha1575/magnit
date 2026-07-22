@@ -1,5 +1,6 @@
 import http from 'node:http'
-import { mkdirSync } from 'node:fs'
+import { createHmac, timingSafeEqual } from 'node:crypto'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DatabaseSync } from 'node:sqlite'
@@ -52,7 +53,7 @@ const getRecentTranslations = database.prepare(`
   FROM translations
   WHERE source_key = ?
   ORDER BY id DESC
-  LIMIT 8
+  LIMIT 1
 `)
 const insertTranslation = database.prepare(`
   INSERT INTO translations (source_key, source_text, translated_text)
@@ -63,24 +64,47 @@ const port = Number(process.env.PORT || 3001)
 const allowedOrigin = process.env.CORS_ORIGIN || '*'
 const openAiApiKey = process.env.OPENAI_API_KEY || ''
 const openAiModel = process.env.OPENAI_MODEL || 'gpt-5.4-mini'
+const testPanelEnabled = process.env.ENABLE_TEST_PANEL !== 'false'
+const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN || ''
+const adminTelegramIds = new Set(
+  (process.env.ADMIN_TELEGRAM_IDS || '434092620,612078835,741068321')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean),
+)
 const unknownGroup = translationConfig.groups.find((group) => group.vacancy === 'Вакансия не найдена')
 const blockedGroup = translationConfig.groups.find((group) => group.vacancy === 'Вакансии из стоп-листа')
 const blockedResponse = blockedGroup.entries[0].approvedAnswer
 const factCatalog = translationConfig.groups.filter(
   (group) => !['Вакансия не найдена', 'Вакансии из стоп-листа'].includes(group.vacancy),
 )
-const professionCatalog = factCatalog.map((group, id) => ({ id, vacancy: group.vacancy }))
+const professionCatalog = factCatalog.map((group, id) => ({
+  id,
+  department: group.department,
+  vacancy: group.vacancy,
+}))
+let logisticsGroupId = factCatalog.findIndex(
+  (group) => group.department === 'Логистика' && group.vacancy.includes('Кладовщик'),
+)
 const translationInstructions = `Ты — строгий классификатор профессий проекта «Твоя работа влияет на жизнь миллионов».
 
 Работай только по этому алгоритму:
 1. Определи профессию в запросе пользователя.
-2. Если профессия соответствует одной из переданных групп вакансий, верни только числовой ID этой группы.
+2. Если профессия или явно названное направление работы соответствует одной из переданных групп, верни только числовой ID этой группы. Фраза «работаю в логистике» относится к направлению «Логистика» и не является неизвестной профессией.
 3. Если профессия не найдена, непонятна или запрос не является профессией, верни только NOT_FOUND.
 4. Стоп-слова проверяются системой до этого запроса и получают отдельный копирайт. Не пытайся самостоятельно обрабатывать или переосмысливать их.
 
 Запрещено писать готовый ответ, перефразировать утверждённые ответы, придумывать профессию или добавлять пояснения.
 
 Формат ответа: только целое число из списка либо NOT_FOUND.`
+const classificationOutputContract = `
+
+ОБЯЗАТЕЛЬНЫЙ ТЕХНИЧЕСКИЙ ФОРМАТ ОТВЕТА:
+— не возвращай готовый копирайт: его выберет сервер из фактуры;
+— если группа найдена, верни только её числовой ID;
+— если группа не найдена, верни только NOT_FOUND;
+— не добавляй название профессии, направление, пояснения или Markdown.`
+let activeTranslationInstructions = translationInstructions
 
 const normalizeForSafety = (value) => value
   .toLowerCase()
@@ -96,6 +120,67 @@ const normalizeForSafety = (value) => value
 // Поэтому, например, слово «политический» не блокируется из-за записи «политик».
 const forbiddenWords = new Set(stopwordsConfig.categories.flatMap((category) => category.words))
 const forbiddenPhrases = new Set(stopwordsConfig.categories.flatMap((category) => category.phrases || []))
+const testSettingsPath = resolve(dataDir, 'test-settings.json')
+
+function getStopwordsList() {
+  return [...forbiddenWords, ...forbiddenPhrases].sort((left, right) => left.localeCompare(right, 'ru'))
+}
+
+function applyFacts(facts) {
+  if (!Array.isArray(facts) || !facts.length) throw new Error('Фактура должна содержать хотя бы одну группу профессий')
+  const normalizedFacts = facts.map((group) => {
+    if (typeof group?.vacancy !== 'string' || !group.vacancy.trim()) throw new Error('У каждой группы должно быть название vacancy')
+    if (!Array.isArray(group.entries) || !group.entries.length) throw new Error(`У профессии «${group.vacancy}» нет утверждённых ответов`)
+    const entries = group.entries.map((entry) => {
+      if (typeof entry?.approvedAnswer !== 'string' || !entry.approvedAnswer.trim()) {
+        throw new Error(`У профессии «${group.vacancy}» найден пустой approvedAnswer`)
+      }
+      return {
+        ...(typeof entry.meaning === 'string' ? { meaning: entry.meaning } : {}),
+        approvedAnswer: entry.approvedAnswer,
+        ...(typeof entry.additionalFact === 'string' ? { additionalFact: entry.additionalFact } : {}),
+      }
+    })
+    return {
+      department: typeof group.department === 'string' ? group.department : '',
+      vacancy: group.vacancy,
+      entries,
+    }
+  })
+
+  factCatalog.splice(0, factCatalog.length, ...normalizedFacts)
+  professionCatalog.splice(0, professionCatalog.length, ...normalizedFacts.map((group, id) => ({
+    id,
+    department: group.department,
+    vacancy: group.vacancy,
+  })))
+  logisticsGroupId = factCatalog.findIndex(
+    (group) => group.department === 'Логистика' && group.vacancy.includes('Кладовщик'),
+  )
+}
+
+function applyTestSettings(settings = {}) {
+  if (typeof settings.prompt === 'string' && settings.prompt.trim()) activeTranslationInstructions = settings.prompt.trim()
+  if (Array.isArray(settings.stopwords)) {
+    forbiddenWords.clear()
+    forbiddenPhrases.clear()
+    for (const rawValue of settings.stopwords) {
+      const value = normalizeForSafety(String(rawValue))
+      if (!value) continue
+      if (value.includes(' ')) forbiddenPhrases.add(value)
+      else forbiddenWords.add(value)
+    }
+  }
+  if (settings.facts !== undefined) applyFacts(settings.facts)
+}
+
+if (existsSync(testSettingsPath)) {
+  try {
+    applyTestSettings(JSON.parse(readFileSync(testSettingsPath, 'utf8')))
+  } catch (error) {
+    console.error('Failed to load test settings:', error.message)
+  }
+}
 
 function isBlockedInput(text) {
   const normalized = normalizeForSafety(text)
@@ -124,17 +209,85 @@ function extractResponseText(payload) {
   return ''
 }
 
-const groupsByVacancy = new Map(translationConfig.groups.map((group) => [group.vacancy, group]))
+function extractProfessionId(value) {
+  const result = value.trim()
+  if (/NOT_FOUND/i.test(result)) return null
+  if (/^\d+$/.test(result)) return Number(result)
 
-function extractSelection(payload) {
-  const raw = extractResponseText(payload).trim()
+  const normalizedResult = result.replace(/^[«"']+|[»"'.]+$/g, '').trim().toLowerCase()
+  const namedGroup = professionCatalog.find(({ vacancy, department }) => {
+    const normalizedVacancy = vacancy.toLowerCase()
+    const fullLabel = `${normalizedVacancy} [направление: ${department.toLowerCase()}]`
+    return normalizedResult === normalizedVacancy || normalizedResult === fullLabel
+  })
+  if (namedGroup) return namedGroup.id
+
   try {
-    const selection = JSON.parse(raw)
-    if (typeof selection?.vacancy === 'string' && typeof selection?.answer === 'string') return selection
+    const parsed = JSON.parse(result)
+    const jsonId = typeof parsed === 'number' ? parsed : parsed?.id ?? parsed?.groupId ?? parsed?.professionId
+    if (Number.isInteger(Number(jsonId))) return Number(jsonId)
   } catch {
+    // Иногда модель возвращает ID с подписью или завершающей точкой.
+  }
+
+  const numericTokens = result.match(/\d+/g)
+  return numericTokens?.length === 1 ? Number(numericTokens[0]) : null
+}
+
+function selectApprovedAnswer(group, previousTranslations) {
+  const approvedAnswers = group.entries.map((entry) => entry.approvedAnswer)
+  const previousAnswer = previousTranslations[0] || ''
+  const alternatives = approvedAnswers.filter((answer) => answer !== previousAnswer)
+  if (alternatives.length) return alternatives[Math.floor(Math.random() * alternatives.length)]
+
+  if (group !== unknownGroup) {
+    const neutralAnswers = unknownGroup.entries.map((entry) => entry.approvedAnswer)
+    const neutralAlternatives = neutralAnswers.filter((answer) => answer !== previousAnswer)
+    if (neutralAlternatives.length) return neutralAlternatives[Math.floor(Math.random() * neutralAlternatives.length)]
+  }
+
+  return approvedAnswers[0]
+}
+
+async function classifyProfession(text) {
+  const normalizedText = normalizeForSafety(text)
+  if (
+    logisticsGroupId >= 0
+    && /(?:^|\s)(?:логистика|логистике|логистику|логистикой|логист|логиста|логистом)(?:\s|$)/.test(normalizedText)
+  ) {
+    return { groupId: logisticsGroupId, group: factCatalog[logisticsGroupId] }
+  }
+
+  const apiResponse = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${openAiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: openAiModel,
+      instructions: `${activeTranslationInstructions}${classificationOutputContract}`,
+      input: `Запрос пользователя:\n${text}\n\nГруппы вакансий:\n${professionCatalog
+        .map(({ id, department, vacancy }) => `${id}: ${vacancy} [направление: ${department}]`)
+        .join('\n')}`,
+      max_output_tokens: 32,
+    }),
+    signal: AbortSignal.timeout(20_000),
+  })
+
+  if (!apiResponse.ok) {
+    const error = new Error(`OpenAI API returned ${apiResponse.status}`)
+    error.status = apiResponse.status === 429 ? 429 : 502
+    throw error
+  }
+
+  const result = extractResponseText(await apiResponse.json()).trim()
+  const groupId = extractProfessionId(result)
+  if (groupId === null) {
+    if (!/NOT_FOUND/i.test(result)) console.warn('OpenAI returned an invalid profession ID:', result.slice(0, 200))
     return null
   }
-  return null
+  return factCatalog[groupId] ? { groupId, group: factCatalog[groupId] } : null
 }
 
 async function translateContribution(text) {
@@ -144,76 +297,11 @@ async function translateContribution(text) {
     throw error
   }
 
-  const sourceKey = normalizeSourceKey(text)
+  const match = await classifyProfession(text)
+  const sourceKey = match ? `vacancy:${match.groupId}` : `not-found:${normalizeSourceKey(text)}`
   const previousTranslations = getRecentTranslations.all(sourceKey).map((row) => row.translated_text)
-  const lastTranslation = previousTranslations[0] || ''
-  const excluded = previousTranslations.length
-    ? `\nНе повторяй предыдущий ответ:\n— ${lastTranslation}`
-    : ''
-  const fallbackOffset = Math.floor(Math.random() * fallbackVariants.length)
-  const rotatedFallbacks = fallbackVariants.map((_, index) => fallbackVariants[(index + fallbackOffset) % fallbackVariants.length])
+  const finalText = selectApprovedAnswer(match?.group || unknownGroup, previousTranslations)
 
-  let finalText = ''
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const apiResponse = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${openAiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: openAiModel,
-        instructions: translationInstructions,
-        input: `Описание работы сотрудника:\n${text}\n\nФактура по вакансиям из Excel. Разрешено возвращать только точный approvedAnswer из выбранной группы:\n${JSON.stringify([
-          ...factCatalog,
-          { ...unknownGroup, entries: rotatedFallbacks.map((approvedAnswer) => ({ approvedAnswer })) },
-        ])}${excluded}\nИдентификатор выбора: ${randomUUID()}\nПопытка: ${attempt + 1}`,
-        max_output_tokens: 320,
-      }),
-      signal: AbortSignal.timeout(20_000),
-    })
-
-    if (!apiResponse.ok) {
-      const error = new Error(`OpenAI API returned ${apiResponse.status}`)
-      error.status = apiResponse.status === 429 ? 429 : 502
-      throw error
-    }
-
-    const payload = await apiResponse.json()
-    const selection = extractSelection(payload)
-    if (!selection) continue
-    const selectedGroup = groupsByVacancy.get(selection.vacancy)
-    if (!selectedGroup || selectedGroup === blockedGroup) continue
-    const candidate = selectedGroup.entries
-      .map((entry) => entry.approvedAnswer)
-      .find((answer) => answer === selection.answer)
-    if (!candidate) continue
-
-    if (candidate !== lastTranslation) {
-      finalText = candidate
-      break
-    }
-
-    const alternative = selectedGroup.entries
-      .map((entry) => entry.approvedAnswer)
-      .find((answer) => answer !== lastTranslation)
-    if (alternative) {
-      finalText = alternative
-      break
-    }
-  }
-
-  // Если у найденной профессии закончились уникальные утверждённые варианты
-  // (например, в Excel для неё пока только один ответ), не повторяем его:
-  // возвращаем дословный нейтральный копирайт из группы «Вакансия не найдена».
-  if (!finalText) {
-    finalText = rotatedFallbacks.find((answer) => !previousTranslations.includes(answer)) || ''
-  }
-  if (!finalText) {
-    const error = new Error('No unused approved answer is available for this profession')
-    error.status = 409
-    throw error
-  }
   insertTranslation.run(sourceKey, text, finalText)
   return finalText
 }
@@ -222,10 +310,45 @@ function sendJson(response, status, payload) {
   response.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Telegram-Init-Data',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   })
   response.end(JSON.stringify(payload))
+}
+
+function verifyTelegramAdmin(request) {
+  if (!telegramBotToken) return { ok: false, status: 503, error: 'Telegram auth is not configured' }
+  const initData = request.headers['x-telegram-init-data']
+  if (typeof initData !== 'string' || !initData) return { ok: false, status: 401, error: 'Telegram authorization required' }
+
+  const params = new URLSearchParams(initData)
+  const receivedHash = params.get('hash') || ''
+  params.delete('hash')
+  if (!/^[a-f0-9]{64}$/i.test(receivedHash)) return { ok: false, status: 401, error: 'Invalid Telegram signature' }
+  const dataCheckString = [...params.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}=${value}`)
+    .join('\n')
+  const secretKey = createHmac('sha256', 'WebAppData').update(telegramBotToken).digest()
+  const calculatedHash = createHmac('sha256', secretKey).update(dataCheckString).digest()
+  const receivedBuffer = Buffer.from(receivedHash, 'hex')
+  if (receivedBuffer.length !== calculatedHash.length || !timingSafeEqual(receivedBuffer, calculatedHash)) {
+    return { ok: false, status: 401, error: 'Invalid Telegram signature' }
+  }
+
+  const authDate = Number(params.get('auth_date'))
+  if (!Number.isFinite(authDate) || Math.abs(Date.now() / 1000 - authDate) > 86_400) {
+    return { ok: false, status: 401, error: 'Telegram authorization expired' }
+  }
+
+  try {
+    const user = JSON.parse(params.get('user') || '{}')
+    const userId = String(user.id || '')
+    if (!adminTelegramIds.has(userId)) return { ok: false, status: 403, error: 'Access denied' }
+    return { ok: true, user: { id: userId, firstName: user.first_name || '', username: user.username || '' } }
+  } catch {
+    return { ok: false, status: 401, error: 'Invalid Telegram user data' }
+  }
 }
 
 function getAnalyticsRows({ dateFrom = '', dateTo = '' } = {}) {
@@ -345,11 +468,15 @@ function buildUtmAnalytics(filters) {
 }
 
 async function readJson(request) {
-  let body = ''
+  const chunks = []
+  let bodyLength = 0
   for await (const chunk of request) {
-    body += chunk
-    if (body.length > 64_000) throw new Error('Payload is too large')
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
+    bodyLength += buffer.length
+    if (bodyLength > 1_000_000) throw new Error('Payload is too large')
+    chunks.push(buffer)
   }
+  const body = Buffer.concat(chunks).toString('utf8')
   return body ? JSON.parse(body) : {}
 }
 
@@ -357,6 +484,38 @@ const server = http.createServer(async (request, response) => {
   if (request.method === 'OPTIONS') return sendJson(response, 204, {})
 
   const url = new URL(request.url, `http://${request.headers.host}`)
+
+  if (url.pathname.startsWith('/api/admin/')) {
+    const admin = verifyTelegramAdmin(request)
+    if (!admin.ok) return sendJson(response, admin.status, { error: admin.error })
+    if (request.method === 'GET' && url.pathname === '/api/admin/auth/me') {
+      return sendJson(response, 200, { user: admin.user })
+    }
+  }
+
+  if (url.pathname === '/api/test-settings') {
+    if (!testPanelEnabled) return sendJson(response, 404, { error: 'Test panel is disabled' })
+
+    if (request.method === 'GET') {
+      return sendJson(response, 200, {
+        prompt: activeTranslationInstructions,
+        stopwords: getStopwordsList(),
+        facts: factCatalog,
+      })
+    }
+
+    if (request.method === 'POST') {
+      try {
+        const body = await readJson(request)
+        applyTestSettings(body)
+        const settings = { prompt: activeTranslationInstructions, stopwords: getStopwordsList(), facts: factCatalog }
+        writeFileSync(testSettingsPath, `${JSON.stringify(settings, null, 2)}\n`, 'utf8')
+        return sendJson(response, 200, settings)
+      } catch (error) {
+        return sendJson(response, 400, { error: error.message })
+      }
+    }
+  }
 
   if (request.method === 'GET' && url.pathname === '/api/health') {
     return sendJson(response, 200, { ok: true, openaiConfigured: Boolean(openAiApiKey) })

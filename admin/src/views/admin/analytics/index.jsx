@@ -19,7 +19,7 @@ import Card from "components/card/Card";
 import MiniStatistics from "components/card/MiniStatistics";
 import LineChart from "components/charts/LineChart";
 import { postJson } from "api";
-import { getRangePayload, normalizeAnalytics } from "mockData";
+import { createAnalyticsMock, getRangePayload, normalizeAnalytics, shouldUseAnalyticsMocks } from "mockData";
 
 const EMPTY = {
   summary: {},
@@ -69,6 +69,12 @@ export default function AnalyticsPage() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError("");
+    if (shouldUseAnalyticsMocks()) {
+      setAnalytics({ ...EMPTY, ...normalizeAnalytics(createAnalyticsMock(range), range) });
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
     postJson("/api/analytics/overview", getRangePayload(range))
       .then((response) => {
         if (!cancelled) setAnalytics({ ...EMPTY, ...normalizeAnalytics(response, range) });

@@ -2,6 +2,39 @@
   animation: page-in 420ms ease both;
 }
 
+.test-panel { position: fixed; z-index: 1000; inset: 0; display: grid; padding: 1rem; place-items: center; background: rgba(12, 12, 18, .62); backdrop-filter: blur(8px); }
+.test-panel__window { position: relative; width: min(44rem, 100%); max-height: min(48rem, calc(100dvh - 2rem)); padding: clamp(1.5rem, 4vw, 2.5rem); overflow: auto; border-radius: 1.75rem; color: #202020; background: #fff; box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, .3); }
+.test-panel h2 { margin: 0 2.5rem 1.25rem 0; font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 1; }
+.test-panel p { margin: -.5rem 0 1rem; color: #777; }
+.test-panel__close { position: absolute; top: 1rem; right: 1rem; width: 2.5rem; height: 2.5rem; padding: 0; border: 0; border-radius: 50%; color: #222; background: #f2f2f2; font-size: 1.8rem; line-height: 1; cursor: pointer; }
+.test-panel__choice { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.test-panel__choice button,
+.test-panel__save { min-height: 3.5rem; padding: .85rem 1.25rem; border: 2px solid #e30613; border-radius: 999px; color: #fff; background: #e30613; font: inherit; font-size: 1.1rem; cursor: pointer; }
+.test-panel__choice button { color: #e30613; background: #fff; }
+.test-panel__back { margin: 0 0 1rem; padding: 0; border: 0; color: #e30613; background: none; font: inherit; cursor: pointer; }
+.test-panel textarea { display: block; width: 100%; min-height: min(25rem, 50dvh); margin-bottom: 1rem; padding: 1rem; resize: vertical; border: 1px solid #ccc; border-radius: 1rem; outline: none; font: 500 .95rem/1.4 Arial, sans-serif; }
+.test-panel textarea:focus { border-color: #e30613; box-shadow: 0 0 0 3px rgba(227, 6, 19, .12); }
+.test-panel__save { width: 100%; }
+.test-panel__save:disabled { opacity: .6; cursor: wait; }
+.test-panel__window--facts { width: min(96rem, 100%); }
+.test-panel__facts-table-wrap { max-height: min(34rem, 58dvh); margin-bottom: 1rem; overflow: auto; border: 1px solid #d9d9d9; border-radius: 1rem; }
+.test-panel__facts-table { width: max(100%, 88rem); border-spacing: 0; border-collapse: separate; table-layout: fixed; font: 500 .84rem/1.3 Arial, sans-serif; }
+.test-panel__facts-table th { position: sticky; z-index: 2; top: 0; padding: .8rem; border-right: 1px solid #ddd; border-bottom: 1px solid #ccc; color: #fff; text-align: left; background: #e30613; }
+.test-panel__facts-table th:nth-child(1) { width: 13%; }
+.test-panel__facts-table th:nth-child(2) { width: 18%; }
+.test-panel__facts-table th:nth-child(3) { width: 22%; }
+.test-panel__facts-table th:nth-child(4) { width: 25%; }
+.test-panel__facts-table th:nth-child(5) { width: 22%; }
+.test-panel__facts-table td { padding: 0; border-right: 1px solid #ddd; border-bottom: 1px solid #ddd; vertical-align: top; background: #fff; }
+.test-panel__facts-table tr:nth-child(even) td { background: #fff8f8; }
+.test-panel__facts-table td textarea { width: 100%; min-height: 7.5rem; margin: 0; padding: .75rem; resize: vertical; border: 0; border-radius: 0; background: transparent; box-shadow: none; font: inherit; }
+.test-panel__facts-table td textarea:focus { position: relative; z-index: 1; background: #fff; box-shadow: inset 0 0 0 2px #e30613; }
+
+@media (max-width: 520px) {
+  .test-panel__choice { grid-template-columns: 1fr; }
+  .test-panel__window { border-radius: 1.25rem; }
+}
+
 .page-leave {
   animation: page-out 420ms ease both;
   pointer-events: none;

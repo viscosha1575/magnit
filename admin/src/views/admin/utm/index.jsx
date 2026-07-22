@@ -19,7 +19,7 @@ import Card from "components/card/Card";
 import MiniStatistics from "components/card/MiniStatistics";
 import BarChart from "components/charts/BarChart";
 import { postJson } from "api";
-import { getRangePayload } from "mockData";
+import { createUtmMock, getRangePayload, shouldUseAnalyticsMocks } from "mockData";
 
 const formatNumber = (value) => new Intl.NumberFormat("ru-RU").format(Number(value) || 0);
 const PERIODS = [["today", "Сегодня"], ["7d", "7 дней"], ["30d", "30 дней"], ["all", "Всё время"]];
@@ -36,6 +36,12 @@ export default function UtmPage() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError("");
+    if (shouldUseAnalyticsMocks()) {
+      setResponse(createUtmMock(range));
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
     postJson("/api/analytics/utm", getRangePayload(range))
       .then((data) => {
         if (!cancelled) {

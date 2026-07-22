@@ -14,6 +14,14 @@ const seriesValues = {
 
 const multipliers = { today: 1, "7d": 6, "30d": 24, all: 73 };
 
+export function shouldUseAnalyticsMocks() {
+  if (import.meta.env.VITE_USE_ANALYTICS_MOCKS === "true") return true;
+  if (import.meta.env.VITE_USE_ANALYTICS_MOCKS === "false") return false;
+  if (import.meta.env.DEV) return true;
+  if (typeof window === "undefined") return false;
+  return ["localhost", "127.0.0.1", "0.0.0.0"].includes(window.location.hostname);
+}
+
 export function createAnalyticsMock(range = "7d") {
   const safeRange = labelsByRange[range] ? range : "7d";
   const factor = multipliers[safeRange];

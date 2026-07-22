@@ -27,6 +27,9 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.4-mini}
+      ENABLE_TEST_PANEL: ${ENABLE_TEST_PANEL:-true}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      ADMIN_TELEGRAM_IDS: ${ADMIN_TELEGRAM_IDS:-434092620,612078835,741068321}
     volumes:
       - backend-data:/app/data
     ports:
@@ -61,11 +64,17 @@ services:
     restart: unless-stopped
     depends_on:
       - traefik
+    environment:
+      API_UPSTREAM: ${API_UPSTREAM:-backend:3001}
     ports:
       - "127.0.0.1:${ADMIN_PORT:-18081}:80"
     labels:
       - traefik.enable=true
-      - traefik.http.routers.magnit-admin.rule=Host(`${DOMAIN:-magnit.specfortest.ru}`) && PathPrefix(`/admin`)
+      - traefik.http.routers.magnit-admin-http.rule=Host(`${ADMIN_DOMAIN:-magnit.specfortest.ru}`)
+      - traefik.http.routers.magnit-admin-http.entrypoints=web
+      - traefik.http.routers.magnit-admin-http.middlewares=magnit-admin-https
+      - traefik.http.middlewares.magnit-admin-https.redirectscheme.scheme=https
+      - traefik.http.routers.magnit-admin.rule=Host(`${ADMIN_DOMAIN:-magnit.specfortest.ru}`)
       - traefik.http.routers.magnit-admin.priority=100
       - traefik.http.routers.magnit-admin.entrypoints=websecure
       - traefik.http.routers.magnit-admin.tls=true
