@@ -74,12 +74,17 @@ body,
   overflow: hidden;
   overscroll-behavior: none;
   background: linear-gradient(135deg, #ff5614 0%, #ff1410 100%);
+  background-color: #ff2f11;
 }
 
 html,
 body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
   overscroll-behavior-x: none;
   overscroll-behavior-y: none;
 }
+
+html { background-color: #ff2f11; }
 
 button { -webkit-tap-highlight-color: transparent; }
