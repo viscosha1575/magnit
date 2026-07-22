@@ -356,7 +356,9 @@
     gap: .75rem;
   }
   .third-page .impact__actions { animation-delay: 3.35s; }
-  .impact__actions button { width: 12rem; padding: .75rem 1.5rem; }
+  .impact__actions button { width: 12rem; }
+  .impact__actions button,
+  .impact__actions a { padding: .75rem 1.5rem; }
 }
 
 @keyframes impact-card-reveal {
