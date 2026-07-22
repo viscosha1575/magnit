@@ -93,7 +93,7 @@ function TranslatorCard({
       <div className="translator__card-stage">
         <form className="translator__card" onSubmit={onSubmit}>
         <div className="field-label">
-          <img className="field-label__icon" src="/svg/all.svg" alt="" />
+          <img className="field-label__icon" src="/svg/all.svg?v=20260722" alt="" />
           <span className="field-label__value">Для всех</span>
         </div>
 
@@ -167,7 +167,7 @@ function TranslatorCard({
         </div>
 
         <div className="field-label field-label--brand">
-          <img className="field-label__icon field-label__icon--brand" src="/svg/magnit.svg" alt="" />
+          <img className="field-label__icon field-label__icon--brand" src="/svg/magnit.svg?v=20260722" alt="" />
           <span className="field-label__value">Магнит</span>
         </div>
 
@@ -179,15 +179,15 @@ function TranslatorCard({
         </article>
 
         <span className={`translator__direction${isTranslating ? ' is-loading' : ''}`} aria-hidden="true">
-          <img src={isTranslating ? '/svg/loading.svg' : '/svg/arrows.svg'} alt="" />
+          <img src={isTranslating ? '/svg/loading.svg?v=20260722' : '/svg/arrows.svg?v=20260722'} alt="" />
         </span>
 
         <div className="result-card__actions">
           <button type="button" aria-label="Поделиться" onClick={onShare} disabled={!canShare}>
-            <img className="result-card__share" src="/svg/share.svg" alt="" />
+            <img className="result-card__share" src="/svg/share.svg?v=20260722" alt="" />
           </button>
           <button className="result-card__next" type="button" aria-label="Перейти на следующую страницу" onClick={onNext}>
-            <img className="result-card__star" src="/svg/star-icon.svg" alt="" />
+            <img className="result-card__star" src="/svg/star-icon.svg?v=20260722" alt="" />
           </button>
           <button className="result-card__translate" type="submit" disabled={isTranslating || !canTranslate}>Перевести</button>
         </div>

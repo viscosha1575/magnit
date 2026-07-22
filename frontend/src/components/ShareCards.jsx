@@ -88,7 +88,7 @@ function ShareCards({
     <div className="share-stack">
       <div className="share-stack__source">
         <div className="share-stack__label">
-          <img src="/svg/all.svg" alt="" />
+          <img src="/svg/all.svg?v=20260722" alt="" />
           {audience}
         </div>
         <p ref={sourcePanelRef} className="share-stack__panel share-stack__source-text">
@@ -112,7 +112,7 @@ function ShareCards({
 
         <div className="share-stack__result">
           <div className="share-stack__brand">
-            <img src="/svg/magnit.svg" alt="" />
+            <img src="/svg/magnit.svg?v=20260722" alt="" />
             {brand}
           </div>
           <p ref={resultPanelRef} className="share-stack__panel share-stack__result-text">

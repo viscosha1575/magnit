@@ -494,7 +494,7 @@
   padding: 0 2.2rem 0 0;
   color: inherit;
   background-color: transparent;
-  background-image: url('/svg/arrow.svg');
+  background-image: url('/svg/arrow.svg?v=20260722');
   background-repeat: no-repeat;
   background-position: right center;
   background-size: 1rem 1rem;
@@ -553,7 +553,7 @@
 .text-field textarea.has-styled-value { color: transparent; }
 .text-field__hint { position: absolute; bottom: 2.35rem; left: 2.5rem; color: #888; font-size: 1.2rem; }
 .field-label--brand { color: #e9001b; }
-.field-label--brand .field-label__value { background-image: url('/svg/arrow-red.svg'); }
+.field-label--brand .field-label__value { background-image: url('/svg/arrow-red.svg?v=20260722'); }
 
 .result-card { position: relative; min-height: 15.51rem; padding: 3.2rem 2.5rem; overflow: hidden; }
 .result-card p { margin: 0; font-size: 1.55rem; font-style: normal; font-weight: 500; line-height: 100%; }

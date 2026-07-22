@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
-import ShareCards from './components/ShareCards.jsx'
 import TranslatorCard from './components/TranslatorCard.jsx'
 import { getUserId, logEvent, startAutomaticLogging } from './lib/logger.js'
+
+const ThirdPage = lazy(() => import('./components/ThirdPage.jsx'))
+const SharePage = lazy(() => import('./components/SharePage.jsx'))
+const ShareModal = lazy(() => import('./components/ShareModal.jsx'))
 
 const loadImage = (source) => new Promise((resolve, reject) => {
   const image = new Image()
@@ -442,12 +445,13 @@ function App() {
     setDownloadStatus('loading')
     logEvent('result_download_started', pageRef.current, { platform: isIOSDevice() ? 'ios' : 'browser' })
     try {
+      if (import.meta.env.DEV && window.__LEGACY_IMAGE_RENDERER__) {
       await document.fonts?.ready
       const [titleImage, starImage, logoImage, audienceImage] = await Promise.all([
-        loadStaticSvg('/svg/your-work2.svg'),
-        loadImage('/svg/star2.svg'),
-        loadColoredSvg('/svg/magnit.svg', '#FFFFFF'),
-        loadImage('/svg/all.svg'),
+        loadStaticSvg('/svg/your-work2.svg?v=20260722'),
+        loadImage('/svg/star2.svg?v=20260722'),
+        loadColoredSvg('/svg/magnit.svg?v=20260722', '#FFFFFF'),
+        loadImage('/svg/all.svg?v=20260722'),
       ])
       const canvas = document.createElement('canvas')
       canvas.width = 1200
@@ -543,6 +547,10 @@ function App() {
       const blob = await new Promise((resolve, reject) => {
         canvas.toBlob((result) => result ? resolve(result) : reject(new Error('PNG creation failed')), 'image/png')
       })
+      void blob
+      }
+      const { createResultImage } = await import('./lib/resultImage.js')
+      const blob = await createResultImage(inputText, translatedText)
       if (isIOSDevice() && navigator.share) {
         const file = new File([blob], fileName, { type: 'image/png' })
         let fileShared = false
@@ -711,125 +719,29 @@ function App() {
 
   if (page === 'third') {
     return (
-      <main className="third-page page-enter">
-        <picture aria-hidden="true">
-          <source media="(min-width: 900px)" srcSet="/svg/circles2-desktop.svg" />
-          <img className="third-page__circles" src="/svg/circles.svg" alt="" />
-        </picture>
-        <section className="impact">
-          <div className="impact__desktop-mark" aria-hidden="true">
-            <img src="/svg/magnit.svg" alt="" />
-            <span />
-            <img src="/svg/star2.svg" alt="" />
-          </div>
-          <div className="impact__heading">
-            <picture aria-hidden="true">
-              <source media="(min-width: 900px)" srcSet="/svg/do2.svg" />
-              <img src="/svg/do.svg" alt="" />
-            </picture>
-            <h2 className="impact__title impact__title--mobile">
-              <span>Создавай ритейл</span>
-              <span>будущего вместе</span>
-              <span>с «Магнит»</span>
-            </h2>
-            <h2 className="impact__title impact__title--desktop">
-              <span>Создавай ритейл будущего</span>
-              <span>вместе с «Магнит»</span>
-            </h2>
-          </div>
-          <article
-            className="impact__card"
-            onTouchStart={(event) => { swipeStartX.current = event.touches[0].clientX }}
-            onTouchEnd={(event) => finishImpactSwipe(event.changedTouches[0].clientX)}
-            onTouchCancel={() => { swipeStartX.current = null }}
-          >
-            {impactTransition && (
-              <div className={`impact__slide impact__slide--${impactTransition.from} impact__slide--out impact__slide--${impactTransition.direction}`}>
-                <h3>{impactSlides[impactTransition.from].title}</h3>
-                <p>{impactSlides[impactTransition.from].text}</p>
-              </div>
-            )}
-            <div
-              key={impactSlide}
-              className={`impact__slide impact__slide--${impactSlide}${impactTransition ? ` impact__slide--in impact__slide--${slideDirection}` : ''}`}
-              onAnimationEnd={() => setImpactTransition(null)}
-              onAnimationCancel={() => setImpactTransition(null)}
-            >
-              <h3>{impactSlides[impactSlide].title}</h3>
-              <p>{impactSlides[impactSlide].text}</p>
-            </div>
-          </article>
-          <div ref={impactCardsViewportRef} className="impact__desktop-cards-viewport">
-            <div ref={impactCardsRef} className="impact__desktop-cards">
-              {impactSlides.map((slide) => (
-                <article className="impact__desktop-card" key={slide.title}>
-                  <h3>{slide.title}</h3>
-                  <p>{slide.desktopText}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-          <div className="impact__dots" aria-label={`Слайд ${impactSlide + 1} из 3`}>
-            {impactSlides.map((slide, index) => (
-              <button
-                className={index === impactSlide ? 'is-active' : ''}
-                key={slide.title}
-                type="button"
-                aria-label={`Перейти к слайду ${index + 1}`}
-                onClick={() => changeImpactSlide(index, 'dot')}
-              />
-            ))}
-          </div>
-          <div className="impact__actions">
-            <button type="button" onClick={() => window.history.back()}>Назад</button>
-            <a
-              className="impact__vacancies"
-              href="https://rabota.magnit.ru/?utm_source=translater-magnit&utm_medium=banner&utm_campaign=drt2026"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => logEvent('vacancies_opened', 'third')}
-            >
-              К вакансиям
-            </a>
-          </div>
-        </section>
-      </main>
+      <Suspense fallback={<main className="third-page" />}>
+        <ThirdPage
+          impactSlide={impactSlide}
+          impactSlides={impactSlides}
+          impactTransition={impactTransition}
+          slideDirection={slideDirection}
+          onSlideChange={(index) => changeImpactSlide(index, 'dot')}
+          onSwipeStart={(event) => { swipeStartX.current = event.touches[0].clientX }}
+          onSwipeEnd={(event) => finishImpactSwipe(event.changedTouches[0].clientX)}
+          onSwipeCancel={() => { swipeStartX.current = null }}
+          onTransitionEnd={() => setImpactTransition(null)}
+          viewportRef={impactCardsViewportRef}
+          cardsRef={impactCardsRef}
+        />
+      </Suspense>
     )
   }
 
   if (page === 'share') {
     return (
-      <main className="share-page page-enter">
-        <img className="share-page__circles" src="/svg/circles.svg" alt="" />
-        <section className="share-view">
-          <button className="share-view__back" type="button" aria-label="Вернуться" onClick={() => window.history.back()}>
-            <img src="/svg/back.svg" alt="" />
-          </button>
-          <div className="share-view__heading">
-            <img src="/svg/your-work2.svg" alt="" />
-            <h2>
-              <img className="share-view__asterisk" src="/svg/star2.svg" alt="" />
-              <span className="share-view__heading-text">влияет на жизнь<br />миллионов</span>
-            </h2>
-          </div>
-          <div className="share-view__cards">
-            <ShareCards
-              sourceValue={inputText}
-              sourceCount={`${inputText.length}/200`}
-              resultValue={translatedText}
-            />
-          </div>
-          <div className="share-view__actions">
-            <button className="share-view__download" type="button" aria-label="Скачать результат" onClick={downloadResult} disabled={downloadStatus === 'loading' || !isResultShareable}>
-              <img src="/svg/save.svg" alt="" />
-            </button>
-            <button className="share-view__copy" type="button" onClick={copyPageLink} aria-live="polite">
-              {copyStatus === 'copied' ? 'Ссылка скопирована' : copyStatus === 'error' ? 'Не удалось скопировать' : 'Скопировать ссылку'}
-            </button>
-            <button className="share-view__telegram" type="button" onClick={shareInTelegram} disabled={!isResultShareable}>Поделиться с другом в TG</button>
-          </div>
-        </section>
-      </main>
+      <Suspense fallback={<main className="share-page" />}>
+        <SharePage inputText={inputText} translatedText={translatedText} downloadStatus={downloadStatus} isResultShareable={isResultShareable} copyStatus={copyStatus} onDownload={downloadResult} onCopy={copyPageLink} onTelegram={shareInTelegram} />
+      </Suspense>
     )
   }
 
@@ -837,14 +749,14 @@ function App() {
     return (
       <main className={`next-page page-enter${isLeaving ? ' page-leave' : ''}`}>
         <picture aria-hidden="true">
-          <source media="(min-width: 900px)" srcSet="/svg/circles2-desktop.svg" />
-          <img className="next-page__circles" src="/svg/circles2.svg" alt="" />
+          <source media="(min-width: 900px)" srcSet="/svg/circles2-desktop.svg?v=20260722" />
+          <img className="next-page__circles" src="/svg/circles2.svg?v=20260722" alt="" />
         </picture>
         <div className="next-page__content">
           <div className="translator__desktop-mark" aria-hidden="true">
-            <img src="/svg/magnit.svg" alt="" />
+            <img src="/svg/magnit.svg?v=20260722" alt="" />
             <span />
-            <img src="/svg/star2.svg" alt="" />
+            <img src="/svg/star2.svg?v=20260722" alt="" />
           </div>
           <section className="translator">
           <h2 className="translator__title">
@@ -887,39 +799,22 @@ function App() {
           </section>
         </div>
         {isShareModalOpen && (
-          <div className="share-modal" role="dialog" aria-modal="true" aria-label="Поделиться результатом">
-            <div className="share-modal__panel">
-              <button className="share-modal__close" type="button" aria-label="Закрыть" onClick={() => {
+          <Suspense fallback={null}>
+            <ShareModal
+              inputText={inputText}
+              translatedText={translatedText}
+              downloadStatus={downloadStatus}
+              isResultShareable={isResultShareable}
+              copyStatus={copyStatus}
+              onClose={() => {
                 setIsShareModalOpen(false)
                 logEvent('share_closed', 'next', { presentation: 'modal' })
-              }}>×</button>
-              <div className="share-modal__preview">
-                <img className="share-modal__preview-title" src="/svg/your-work2.svg" alt="" />
-                <div className="share-modal__preview-subtitle">
-                  <img src="/svg/star2.svg" alt="" />
-                  <span>влияет на жизнь<br />миллионов</span>
-                </div>
-                <ShareCards
-                  sourceValue={inputText}
-                  sourceCount={`${inputText.length}/200`}
-                  resultValue={translatedText}
-                />
-                <div className="share-modal__preview-mark"><img src="/svg/magnit.svg" alt="" /><span /><img src="/svg/star2.svg" alt="" /></div>
-              </div>
-              <div className="share-modal__content">
-                <h2><strong>Поделись результатом<br />и предложи коллегам<br />и друзьям тоже перевести<br />свою профессию.</strong> Возможно,<br />их вклад масштабнее, чем<br />они привыкли думать.<img className="share-modal__title-star" src="/svg/star2.svg" alt="" /></h2>
-                <div className="share-modal__actions">
-                  <button type="button" onClick={shareInTelegram} disabled={!isResultShareable}>Поделиться в TG</button>
-                  <button type="button" onClick={downloadResult} disabled={downloadStatus === 'loading' || !isResultShareable}>
-                    {downloadStatus === 'loading' ? 'Подготовка…' : downloadStatus === 'error' ? 'Не удалось скачать' : 'Скачать результат'}
-                  </button>
-                  <button className="share-modal__copy" type="button" onClick={copyPageLink} aria-live="polite">
-                    {copyStatus === 'copied' ? 'Ссылка скопирована' : copyStatus === 'error' ? 'Не удалось скопировать' : 'Просто скопировать ссылку'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+              }}
+              onTelegram={shareInTelegram}
+              onDownload={downloadResult}
+              onCopy={copyPageLink}
+            />
+          </Suspense>
         )}
         {testPanel && (
           <div className="test-panel" role="dialog" aria-modal="true" aria-label="Тестовые настройки">
@@ -987,25 +882,25 @@ function App() {
     <main className={`hero page-enter${isLeaving ? ' page-leave' : ''}`}>
       <div className="hero__art" aria-hidden="true">
         <svg className="hero__desktop-art hero__desktop-art--top" viewBox="-60 -60 1841 1200" preserveAspectRatio="xMidYMid slice">
-          <use href="/svg/your-work-desk.svg#your-word" />
+          <use href="/svg/your-work-desk.svg?v=20260722#your-word" />
         </svg>
         <svg className="hero__desktop-art hero__desktop-art--bottom" viewBox="-60 -60 1841 1200" preserveAspectRatio="xMidYMid slice">
-          <use href="/svg/your-work-desk.svg#work-word-main" />
-          <use href="/svg/your-work-desk.svg#work-word-detail" />
+          <use href="/svg/your-work-desk.svg?v=20260722#work-word-main" />
+          <use href="/svg/your-work-desk.svg?v=20260722#work-word-detail" />
         </svg>
       </div>
 
       <section className="hero__content">
         <div className="hero__desktop-mark" aria-hidden="true">
-          <img src="/svg/magnit.svg" alt="" />
+          <img src="/svg/magnit.svg?v=20260722" alt="" />
           <span />
-          <img src="/svg/star2.svg" alt="" />
+          <img src="/svg/star2.svg?v=20260722" alt="" />
         </div>
         <div className="hero__headline">
-          <img className="hero__brush hero__brush--top" src="/svg/your.svg" alt="" />
-          <img className="hero__brush hero__brush--bottom" src="/svg/work.svg" alt="" />
+          <img className="hero__brush hero__brush--top" src="/svg/your.svg?v=20260722" alt="" />
+          <img className="hero__brush hero__brush--bottom" src="/svg/work.svg?v=20260722" alt="" />
           <h1 className="hero__title">
-            <span><img className="hero__title-star-desktop" src="/svg/star2.svg" alt="" /> влияет</span>
+            <span><img className="hero__title-star-desktop" src="/svg/star2.svg?v=20260722" alt="" /> влияет</span>
             <span>на жизнь</span>
             <span>миллионов</span>
           </h1>
@@ -1013,8 +908,8 @@ function App() {
 
         <div className="hero__copy-wrap">
           <picture aria-hidden="true">
-            <source media="(min-width: 900px)" srcSet="/svg/circles-desctop.svg" />
-            <img className="hero__circles" src="/svg/circles.svg" alt="" />
+            <source media="(min-width: 900px)" srcSet="/svg/circles-desctop.svg?v=20260722" />
+            <img className="hero__circles" src="/svg/circles.svg?v=20260722" alt="" />
           </picture>
           <div className="hero__copy">
             <p>
