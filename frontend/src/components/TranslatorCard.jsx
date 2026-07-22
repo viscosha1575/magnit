@@ -167,7 +167,7 @@ function TranslatorCard({
 
         <div className="field-label field-label--brand">
           <img className="field-label__icon field-label__icon--brand" src="/svg/magnit.svg" alt="" />
-          <span className="field-label__value">«Магнит»</span>
+          <span className="field-label__value">Магнит</span>
         </div>
 
         <article className={`result-card${isTranslating ? ' is-loading' : ''}`} aria-live="polite" aria-busy={isTranslating}>
