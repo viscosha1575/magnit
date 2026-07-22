@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DatabaseSync } from 'node:sqlite'
 import translationConfig from './translation-config.json' with { type: 'json' }
+import stopwordsConfig from './stopwords-config.json' with { type: 'json' }
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
 const dataDir = resolve(currentDir, '../data')
@@ -108,18 +109,20 @@ const normalizeForSafety = (value) => value
   .replace(/[^a-zа-я0-9]+/g, ' ')
   .trim()
 
-const forbiddenPatterns = [
-  /(?:бля(?:д|т)?|сук[аи]|муд(?:ак|ил)|гандон|пидор|педик|шлюх|проститут|урод|дебил|идиот|кретин)[a-zа-я]*/i,
-  /(?:пизд|хуй|хуе|хуя|ебан|ебат|ебут|ебуч|ебл|долбоеб|долбаеб|уеб|заеб|наеб|выеб|проеб|съеб|поеб)\w*/i,
-  /(?:нацист|фашист|расист|террорист|экстремист)[a-zа-я]*/i,
-  /(?:политик|президент|депутат|министр|госдум|правительств|путин|зеленск|трамп|навальн|единая\s*россия|кпрф|лдпр|войн)[a-zа-я]*/i,
-  /(?:^|\s)сво(?:\s|$)/i,
-]
+// Стоп-лист проверяется по полному совпадению слова, а не по его основе.
+// Поэтому, например, слово «политический» не блокируется из-за записи «политик».
+const forbiddenWords = new Set(stopwordsConfig.categories.flatMap((category) => category.words))
+const forbiddenPhrases = new Set(stopwordsConfig.categories.flatMap((category) => category.phrases || []))
 
 function isBlockedInput(text) {
   const normalized = normalizeForSafety(text)
-  const compact = normalized.replace(/\s+/g, '')
-  return forbiddenPatterns.some((pattern) => pattern.test(normalized) || pattern.test(compact))
+  const words = normalized.split(/\s+/).filter(Boolean)
+  if (words.some((word) => forbiddenWords.has(word))) return true
+
+  return [...forbiddenPhrases].some((phrase) => {
+    const phraseLength = phrase.split(' ').length
+    return words.some((_, index) => words.slice(index, index + phraseLength).join(' ') === phrase)
+  })
 }
 
 const normalizeSourceKey = (text) => normalizeForSafety(text)
