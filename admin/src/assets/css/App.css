@@ -1,0 +1,23 @@
+@font-face {
+  font-family: "Google Sans";
+  src: url("/font/GoogleSans-VariableFont_GRAD,opsz,wght.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Google Sans";
+  src: url("/font/GoogleSans-Italic-VariableFont_GRAD,opsz,wght.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+body {
+  font-family: "Google Sans", sans-serif;
+}
+
+option {
+  color: black;
+}

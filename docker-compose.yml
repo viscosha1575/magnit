@@ -55,6 +55,23 @@ services:
       - traefik.http.routers.magnit.tls.certresolver=letsencrypt
       - traefik.http.services.magnit.loadbalancer.server.port=80
 
+  admin:
+    build:
+      context: ./admin
+    restart: unless-stopped
+    depends_on:
+      - traefik
+    ports:
+      - "127.0.0.1:${ADMIN_PORT:-18081}:80"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.magnit-admin.rule=Host(`${DOMAIN:-magnit.specfortest.ru}`) && PathPrefix(`/admin`)
+      - traefik.http.routers.magnit-admin.priority=100
+      - traefik.http.routers.magnit-admin.entrypoints=websecure
+      - traefik.http.routers.magnit-admin.tls=true
+      - traefik.http.routers.magnit-admin.tls.certresolver=letsencrypt
+      - traefik.http.services.magnit-admin.loadbalancer.server.port=80
+
 volumes:
   backend-data:
   traefik-certificates:

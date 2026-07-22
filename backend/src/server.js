@@ -217,6 +217,122 @@ function sendJson(response, status, payload) {
   response.end(JSON.stringify(payload))
 }
 
+function getAnalyticsRows({ dateFrom = '', dateTo = '' } = {}) {
+  const normalizedFrom = /^\d{4}-\d{2}-\d{2}$/.test(dateFrom) ? dateFrom : ''
+  const normalizedTo = /^\d{4}-\d{2}-\d{2}$/.test(dateTo) ? dateTo : ''
+  return database.prepare(`
+    SELECT user_id, event_type, page, metadata, created_at
+    FROM logs
+    WHERE (? = '' OR date(created_at) >= date(?))
+      AND (? = '' OR date(created_at) <= date(?))
+    ORDER BY id ASC
+  `).all(normalizedFrom, normalizedFrom, normalizedTo, normalizedTo).map((row) => {
+    try {
+      return { ...row, metadata: JSON.parse(row.metadata || '{}') }
+    } catch {
+      return { ...row, metadata: {} }
+    }
+  })
+}
+
+const countEvents = (rows, eventType) => rows.filter((row) => row.event_type === eventType).length
+const countEventUsers = (rows, eventType) => new Set(
+  rows.filter((row) => row.event_type === eventType).map((row) => row.user_id),
+).size
+
+function buildAnalyticsOverview(filters) {
+  const rows = getAnalyticsRows(filters)
+  const eventCounts = new Map()
+  const pageCounts = new Map()
+  const daily = new Map()
+
+  for (const row of rows) {
+    eventCounts.set(row.event_type, (eventCounts.get(row.event_type) || 0) + 1)
+    if (row.event_type === 'page_view' && row.page) {
+      pageCounts.set(row.page, (pageCounts.get(row.page) || 0) + 1)
+    }
+    const date = row.created_at.slice(0, 10)
+    if (!daily.has(date)) daily.set(date, { date, users: new Set(), sessions: 0, translations: 0 })
+    const point = daily.get(date)
+    point.users.add(row.user_id)
+    if (row.event_type === 'session_start') point.sessions += 1
+    if (row.event_type === 'translation_succeeded') point.translations += 1
+  }
+
+  return {
+    meta: { dateFrom: filters?.dateFrom || '', dateTo: filters?.dateTo || '', generatedAt: new Date().toISOString() },
+    summary: {
+      uniqueUsers: new Set(rows.map((row) => row.user_id)).size,
+      sessions: countEvents(rows, 'session_start'),
+      pageViews: countEvents(rows, 'page_view'),
+      inputUsers: countEventUsers(rows, 'profession_input_changed'),
+      translationRequests: countEvents(rows, 'translation_requested'),
+      successfulTranslations: countEvents(rows, 'translation_succeeded'),
+      failedTranslations: countEvents(rows, 'translation_failed'),
+      shareOpens: countEvents(rows, 'share_opened'),
+      telegramShares: countEvents(rows, 'telegram_share_opened'),
+      downloads: countEvents(rows, 'result_downloaded') + countEvents(rows, 'result_shared'),
+      vacanciesClicks: countEvents(rows, 'vacancies_opened'),
+    },
+    events: [...eventCounts.entries()]
+      .map(([eventType, count]) => ({ eventType, count }))
+      .sort((left, right) => right.count - left.count),
+    pages: [...pageCounts.entries()]
+      .map(([page, count]) => ({ page, count }))
+      .sort((left, right) => right.count - left.count),
+    series: [...daily.values()].map((point) => ({
+      date: point.date,
+      uniqueUsers: point.users.size,
+      sessions: point.sessions,
+      translations: point.translations,
+    })),
+  }
+}
+
+function buildUtmAnalytics(filters) {
+  const rows = getAnalyticsRows(filters)
+  const groups = new Map()
+
+  for (const row of rows) {
+    const utm = row.metadata?.utm
+    if (!utm || !Object.values(utm).some(Boolean)) continue
+    const key = [utm.source, utm.medium, utm.campaign, utm.content, utm.term].join('\u0001')
+    if (!groups.has(key)) {
+      groups.set(key, {
+        source: utm.source || '(not set)', medium: utm.medium || '(not set)',
+        campaign: utm.campaign || '(not set)', content: utm.content || '', term: utm.term || '',
+        users: new Set(), sessions: 0, translationUsers: new Set(), translations: 0,
+      })
+    }
+    const group = groups.get(key)
+    group.users.add(row.user_id)
+    if (row.event_type === 'session_start') group.sessions += 1
+    if (row.event_type === 'translation_succeeded') {
+      group.translations += 1
+      group.translationUsers.add(row.user_id)
+    }
+  }
+
+  const items = [...groups.values()].map((group) => ({
+    source: group.source, medium: group.medium, campaign: group.campaign,
+    content: group.content, term: group.term, uniqueUsers: group.users.size,
+    sessions: group.sessions, translations: group.translations,
+    conversion: group.users.size ? Math.round((group.translationUsers.size / group.users.size) * 1000) / 10 : 0,
+  })).sort((left, right) => right.uniqueUsers - left.uniqueUsers)
+
+  return {
+    summary: {
+      campaigns: items.length,
+      uniqueUsers: new Set(
+        rows.filter((row) => row.metadata?.utm).map((row) => row.user_id),
+      ).size,
+      sessions: items.reduce((sum, item) => sum + item.sessions, 0),
+      translations: items.reduce((sum, item) => sum + item.translations, 0),
+    },
+    items,
+  }
+}
+
 async function readJson(request) {
   let body = ''
   for await (const chunk of request) {
@@ -233,6 +349,22 @@ const server = http.createServer(async (request, response) => {
 
   if (request.method === 'GET' && url.pathname === '/api/health') {
     return sendJson(response, 200, { ok: true, openaiConfigured: Boolean(openAiApiKey) })
+  }
+
+  if (request.method === 'POST' && url.pathname === '/api/admin/analytics/overview') {
+    try {
+      return sendJson(response, 200, buildAnalyticsOverview(await readJson(request)))
+    } catch (error) {
+      return sendJson(response, 500, { error: error.message })
+    }
+  }
+
+  if (request.method === 'POST' && url.pathname === '/api/admin/analytics/utm') {
+    try {
+      return sendJson(response, 200, buildUtmAnalytics(await readJson(request)))
+    } catch (error) {
+      return sendJson(response, 500, { error: error.message })
+    }
   }
 
   if (request.method === 'POST' && url.pathname === '/api/translate') {

@@ -1,5 +1,28 @@
 const USER_ID_KEY = 'magnit_user_id'
+const UTM_KEY = 'magnit_utm_attribution'
 const API_URL = import.meta.env.VITE_API_URL || ''
+
+function getUtmAttribution() {
+  const parameters = new URLSearchParams(window.location.search)
+  const incoming = {
+    source: parameters.get('utm_source') || '',
+    medium: parameters.get('utm_medium') || '',
+    campaign: parameters.get('utm_campaign') || '',
+    content: parameters.get('utm_content') || '',
+    term: parameters.get('utm_term') || '',
+  }
+
+  if (Object.values(incoming).some(Boolean)) {
+    localStorage.setItem(UTM_KEY, JSON.stringify(incoming))
+    return incoming
+  }
+
+  try {
+    return JSON.parse(localStorage.getItem(UTM_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
 
 function createUserId() {
   if (typeof globalThis.crypto?.randomUUID === 'function') {
@@ -31,11 +54,15 @@ export function getUserId() {
 }
 
 export function logEvent(eventType, page, metadata = {}) {
+  const utm = getUtmAttribution()
   const payload = JSON.stringify({
     userId: getUserId(),
     eventType,
     page,
-    metadata,
+    metadata: {
+      ...metadata,
+      ...(Object.values(utm).some(Boolean) ? { utm } : {}),
+    },
   })
 
   fetch(`${API_URL}/api/logs`, {
@@ -50,6 +77,8 @@ export function startAutomaticLogging(getPage) {
   logEvent('session_start', getPage(), {
     viewport: `${window.innerWidth}x${window.innerHeight}`,
     language: navigator.language,
+    landingPath: `${window.location.pathname}${window.location.search}`,
+    referrer: document.referrer,
   })
 
   const handleClick = (event) => {
