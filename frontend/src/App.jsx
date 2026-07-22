@@ -101,6 +101,7 @@ function App() {
   const shareModalOpenRef = useRef(isShareModalOpen)
   shareModalOpenRef.current = isShareModalOpen
   const swipeStartX = useRef(null)
+  const impactTransitionTimerRef = useRef(null)
   const pageRef = useRef(page)
   const typingTimerRef = useRef(null)
   const autoTranslateTimerRef = useRef(null)
@@ -175,9 +176,23 @@ function App() {
     window.clearInterval(typingTimerRef.current)
     window.clearTimeout(autoTranslateTimerRef.current)
     window.clearTimeout(copyStatusTimerRef.current)
+    window.clearTimeout(impactTransitionTimerRef.current)
     cancelAnimationFrame(inputFocusFrameRef.current)
     translationRequestRef.current?.abort()
   }, [])
+
+  useEffect(() => {
+    window.clearTimeout(impactTransitionTimerRef.current)
+    if (!impactTransition) return undefined
+
+    // Mobile browsers can cancel a CSS animation without firing animationend.
+    // Always release the swipe lock shortly after the visual transition ends.
+    impactTransitionTimerRef.current = window.setTimeout(() => {
+      setImpactTransition(null)
+    }, 520)
+
+    return () => window.clearTimeout(impactTransitionTimerRef.current)
+  }, [impactTransition])
 
   const animateTranslation = useCallback((text) => {
     window.clearInterval(typingTimerRef.current)
@@ -590,6 +605,7 @@ function App() {
             className="impact__card"
             onTouchStart={(event) => { swipeStartX.current = event.touches[0].clientX }}
             onTouchEnd={(event) => finishImpactSwipe(event.changedTouches[0].clientX)}
+            onTouchCancel={() => { swipeStartX.current = null }}
           >
             {impactTransition && (
               <div className={`impact__slide impact__slide--${impactTransition.from} impact__slide--out impact__slide--${impactTransition.direction}`}>
@@ -601,6 +617,7 @@ function App() {
               key={impactSlide}
               className={`impact__slide impact__slide--${impactSlide}${impactTransition ? ` impact__slide--in impact__slide--${slideDirection}` : ''}`}
               onAnimationEnd={() => setImpactTransition(null)}
+              onAnimationCancel={() => setImpactTransition(null)}
             >
               <h3>{impactSlides[impactSlide].title}</h3>
               <p>{impactSlides[impactSlide].text}</p>
