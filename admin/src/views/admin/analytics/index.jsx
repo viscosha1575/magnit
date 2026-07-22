@@ -31,6 +31,9 @@ const EMPTY = {
 
 const EVENT_LABELS = {
   session_start: "Начало сессии",
+  session_end: "Завершение сессии",
+  visibility_changed: "Изменение видимости страницы",
+  navigation: "Переход между страницами",
   page_view: "Просмотр страницы",
   click: "Клик",
   profession_input_changed: "Ввод профессии",
@@ -39,10 +42,15 @@ const EVENT_LABELS = {
   translation_failed: "Ошибка перевода",
   translation_cancelled: "Отменённый перевод",
   share_opened: "Открыт шеринг",
+  share_closed: "Закрыт шеринг",
+  share_link_copied: "Ссылка скопирована",
+  share_link_copy_failed: "Ошибка копирования ссылки",
   telegram_share_opened: "Переход в Telegram",
   result_download_started: "Начато скачивание",
   result_downloaded: "Скачана картинка",
-  result_shared: "Поделен файл",
+  result_download_failed: "Ошибка скачивания",
+  result_shared: "Результатом поделились",
+  result_share_cancelled: "Отменена отправка файла",
   vacancies_opened: "Переход к вакансиям",
   impact_slide_changed: "Смена карточки",
 };
