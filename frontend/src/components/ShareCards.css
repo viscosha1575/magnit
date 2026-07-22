@@ -7,7 +7,7 @@
 .share-stack__panel { position: absolute; right: auto; bottom: 1.5rem; left: 50%; display: grid; width: 88.65%; height: auto; aspect-ratio: 289 / 135; margin: 0; padding: 20px; border: 1px solid #ccc; border-radius: 2rem; place-content: start; color: #1d1d1d; background: #fff; transform: translateX(-50%); container-type: inline-size; }
 .share-stack__source-text { z-index: 1; bottom: 18px; display: block; padding: 20px; border-radius: 24px; font-size: 1.35rem; font-weight: 400; line-height: 1; }
 .share-stack__source-copy { position: relative; z-index: 2; }
-.share-stack__source-copy--dynamic { display: block; width: 72%; height: auto; overflow-wrap: anywhere; white-space: pre-wrap; }
+.share-stack__source-copy--dynamic { display: block; width: 100%; height: auto; overflow-wrap: anywhere; white-space: pre-wrap; }
 .share-stack__source-accent { position: relative; display: inline-block; }
 .share-stack__source-accent svg { position: absolute; z-index: -1; top: 50%; left: 50%; width: calc(100% + .55em); height: 1.05em; overflow: visible; fill: none; stroke: #e30613; stroke-width: 1; transform: translate(-50%, -48%); }
 .share-stack__source-arrow { position: absolute; top: 42%; left: 69%; width: 20%; height: 42%; overflow: visible; }

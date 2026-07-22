@@ -492,7 +492,7 @@ function App() {
       context.roundRect(-230, -65, 460, 190, 32)
       context.stroke()
       context.fillStyle = '#1d1d1d'
-      const sourceLayout = drawFittedWrappedText(context, inputText, -195, -15, 225, 108, {
+      const sourceLayout = drawFittedWrappedText(context, inputText, -195, -15, 390, 108, {
         maximumSize: 34,
         minimumSize: 20,
         maximumLines: 4,
