@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'Arha Magnit';
-  src: url('/fonts/Arha%20Font%20Family/CopyrightBolditalicStudio-ArhaRegularTrial-BF6764ee7f00a5e.otf') format('opentype');
+  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/ArhaMagnit-Regular.otf') format('opentype');
   font-style: normal;
   font-weight: 400;
   font-display: block;
@@ -8,7 +8,7 @@
 
 @font-face {
   font-family: 'Arha Magnit';
-  src: url('/fonts/Arha%20Font%20Family/CopyrightBolditalicStudio-ArhaMediumTrial-BF6764ee7ee3a17.otf') format('opentype');
+  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/ArhaMagnit-Medium.otf') format('opentype');
   font-style: normal;
   font-weight: 500;
   font-display: block;
@@ -16,7 +16,7 @@
 
 @font-face {
   font-family: 'Arha Magnit';
-  src: url('/fonts/Arha%20Font%20Family/CopyrightBolditalicStudio-ArhaSemiboldTrial-BF6764ee7eea214.otf') format('opentype');
+  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/ArhaMagnit-Semibold.otf') format('opentype');
   font-style: normal;
   font-weight: 600;
   font-display: block;
@@ -24,7 +24,7 @@
 
 @font-face {
   font-family: 'Arha Magnit';
-  src: url('/fonts/Arha%20Font%20Family/CopyrightBolditalicStudio-ArhaBoldTrial-BF6764ee7ec8ea8.otf') format('opentype');
+  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/ArhaMagnit-Bold.otf') format('opentype');
   font-style: normal;
   font-weight: 700;
   font-display: block;
@@ -32,7 +32,7 @@
 
 @font-face {
   font-family: 'Arha Magnit';
-  src: url('/fonts/Arha%20Font%20Family/CopyrightBolditalicStudio-ArhaExtraboldTrial-BF6764ee7ed613e.otf') format('opentype');
+  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/ArhaMagnit-Extrabold.otf') format('opentype');
   font-style: normal;
   font-weight: 800;
   font-display: block;
@@ -40,7 +40,7 @@
 
 @font-face {
   font-family: 'Arha Magnit';
-  src: url('/fonts/Arha%20Font%20Family/CopyrightBolditalicStudio-ArhaBlackTrial-BF6764ee7ec9aa0.otf') format('opentype');
+  src: url('/fonts/ArhaMagnit_3.003_FSType-Installable/ArhaMagnit-Black.otf') format('opentype');
   font-style: normal;
   font-weight: 900;
   font-display: block;
