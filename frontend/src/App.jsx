@@ -33,7 +33,7 @@ const loadColoredSvg = async (source, color) => {
   }
 }
 
-const drawWrappedText = (context, text, x, y, maxWidth, lineHeight, maxLines = 4) => {
+const getWrappedTextLines = (context, text, maxWidth) => {
   const words = text.replace(/\n/g, ' \n ').split(/\s+/)
   const lines = []
   let line = ''
@@ -54,7 +54,36 @@ const drawWrappedText = (context, text, x, y, maxWidth, lineHeight, maxLines = 4
   })
   if (line) lines.push(line)
 
+  return lines
+}
+
+const drawWrappedText = (context, text, x, y, maxWidth, lineHeight, maxLines = 4) => {
+  const lines = getWrappedTextLines(context, text, maxWidth)
+
   lines.slice(0, maxLines).forEach((value, index) => context.fillText(value, x, y + index * lineHeight))
+}
+
+const drawFittedWrappedText = (context, text, x, y, maxWidth, maxHeight, {
+  maximumSize = 32,
+  minimumSize = 20,
+  maximumLines = 5,
+  weight = 600,
+  lineHeightRatio = 1.16,
+} = {}) => {
+  let size = maximumSize
+  let lines = []
+  let lineHeight = size * lineHeightRatio
+
+  while (size >= minimumSize) {
+    context.font = `${weight} ${size}px "Arha Magnit", Arial`
+    lines = getWrappedTextLines(context, text, maxWidth)
+    lineHeight = size * lineHeightRatio
+    const textHeight = size + Math.max(0, lines.length - 1) * lineHeight
+    if (lines.length <= maximumLines && textHeight <= maxHeight) break
+    size -= 0.5
+  }
+
+  lines.forEach((value, index) => context.fillText(value, x, y + index * lineHeight))
 }
 
 const isIOSDevice = () => {
@@ -404,8 +433,7 @@ function App() {
       context.roundRect(-230, -76, 460, 210, 32)
       context.fill()
       context.fillStyle = '#1d1d1d'
-      context.font = '600 32px "Arha Magnit", Arial'
-      drawWrappedText(context, translatedText, -195, -24, 385, 37, 4)
+      drawFittedWrappedText(context, translatedText, -195, -24, 385, 158)
       context.restore()
 
       context.save()
