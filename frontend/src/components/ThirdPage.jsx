@@ -63,7 +63,7 @@ export default function ThirdPage({
         <div className="impact__heading">
           <picture aria-hidden="true">
             <source media="(min-width: 900px)" srcSet="/svg/do2.svg?v=20260722" />
-            <img src="/svg/do.svg?v=20260722" alt="" />
+            <img src="/svg/do.svg?v=20260722-2" alt="" />
           </picture>
           <h2 className="impact__title impact__title--mobile"><span>Создавай ритейл</span><span>будущего вместе</span><span>с «Магнит»</span></h2>
           <h2 className="impact__title impact__title--desktop"><span>Создавай ритейл будущего</span><span>вместе с «Магнит»</span></h2>

@@ -255,6 +255,12 @@
     animation: none;
   }
 
+  .third-page .impact__card,
+  .third-page .impact__dots,
+  .third-page .impact__actions {
+    animation-duration: 440ms;
+  }
+
   .third-page__circles {
     position: absolute;
     inset: 0;
@@ -267,12 +273,19 @@
 
   .third-page .impact__heading h2 {
     opacity: 0;
-    animation: impact-heading-title-reveal 520ms cubic-bezier(.16, 1, .3, 1) 2.15s forwards;
+    animation: impact-heading-title-reveal 380ms cubic-bezier(.16, 1, .3, 1) .85s forwards;
   }
 
-  .third-page .impact__card { animation-delay: 2.75s; }
-  .third-page .impact__dots { animation-delay: 3.45s; }
-  .third-page .impact__actions { animation-delay: 3.65s; }
+  .third-page .impact__card { animation-delay: 1.22s; }
+  .third-page .impact__dots { animation-delay: 1.58s; }
+  .third-page .impact__actions { animation-delay: 1.72s; }
+
+  .impact__slide--in.impact__slide--next,
+  .impact__slide--in.impact__slide--prev,
+  .impact__slide--out.impact__slide--next,
+  .impact__slide--out.impact__slide--prev {
+    animation-duration: 300ms;
+  }
 
   .impact {
     display: grid;

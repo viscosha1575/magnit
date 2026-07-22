@@ -30,7 +30,7 @@ export function warmSecondaryArtwork() {
     const isDesktop = window.matchMedia('(min-width: 900px)').matches
     const sources = isDesktop
       ? ['/svg/circles2-desktop.svg?v=20260722', '/svg/do2.svg?v=20260722']
-      : ['/svg/circles2.svg?v=20260722', '/svg/do.svg?v=20260722']
+      : ['/svg/circles2.svg?v=20260722', '/svg/do.svg?v=20260722-2']
     sources.forEach(warmImage)
   }
   const schedule = () => {

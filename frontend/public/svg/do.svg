@@ -2,12 +2,12 @@
 <defs>
   <clipPath id="action-word-mask">
     <rect x="0" y="0" width="0" height="165">
-      <animate id="draw-action-word" attributeName="width" from="0" to="341" dur="0.9s" begin="0.15s" calcMode="spline" keySplines=".62 0 .32 1" fill="freeze" />
+      <animate id="draw-action-word" attributeName="width" from="0" to="341" dur="0.65s" begin="0.08s" calcMode="spline" keySplines=".62 0 .32 1" fill="freeze" />
     </rect>
   </clipPath>
   <clipPath id="scale-word-mask">
     <rect x="0" y="0" width="0" height="165">
-      <animate attributeName="width" from="0" to="341" dur="0.95s" begin="draw-action-word.end+0.08s" calcMode="spline" keySplines=".62 0 .32 1" fill="freeze" />
+      <animate attributeName="width" from="0" to="341" dur="0.7s" begin="draw-action-word.end+0.04s" calcMode="spline" keySplines=".62 0 .32 1" fill="freeze" />
     </rect>
   </clipPath>
 </defs>
