@@ -72,11 +72,11 @@ const adminTelegramIds = new Set(
     .map((value) => value.trim())
     .filter(Boolean),
 )
-const unknownGroup = translationConfig.groups.find((group) => group.vacancy === 'Вакансия не найдена')
-const blockedGroup = translationConfig.groups.find((group) => group.vacancy === 'Вакансии из стоп-листа')
-const blockedResponse = blockedGroup.entries[0].approvedAnswer
+let unknownGroup = translationConfig.groups.find((group) => group.vacancy === 'Вакансия не найдена')
+let blockedGroup = translationConfig.groups.find((group) => group.vacancy === 'Вакансии из стоп-листа')
+let blockedResponse = blockedGroup.entries[0].approvedAnswer
 const factCatalog = translationConfig.groups.filter(
-  (group) => !['Вакансия не найдена', 'Вакансии из стоп-листа'].includes(group.vacancy),
+  (group) => !['Общие смыслы', 'Вакансия не найдена', 'Вакансии из стоп-листа'].includes(group.vacancy),
 )
 const professionCatalog = factCatalog.map((group, id) => ({
   id,
@@ -102,8 +102,11 @@ const classificationOutputContract = `
 ОБЯЗАТЕЛЬНЫЙ ТЕХНИЧЕСКИЙ ФОРМАТ ОТВЕТА:
 — не возвращай готовый копирайт: его выберет сервер из фактуры;
 — если запрос связан с войной, военной деятельностью, оружием, насилием, политикой, наркотиками, сексуальными услугами или содержит название конкурирующего бренда, верни только BLOCKED;
-— если группа найдена, верни только её числовой ID;
-— если группа не найдена, верни только NOT_FOUND;
+— ЗАПРЕЩЕНО выбирать «самую близкую», похожую по обязанностям, отрасли или смыслу профессию;
+— верни числовой ID только тогда, когда профессия пользователя прямо указана в названии вакансии переданной группы; допускаются только падеж, число, род и общеупотребимое сокращение той же должности;
+— если такого названия профессии в группах нет, всегда верни только NOT_FOUND, даже если работа кажется полезной, похожей или подходящей по направлению;
+— примеры неизвестных профессий при их отсутствии в группах: дворник, учитель, врач, художник → NOT_FOUND;
+— инструкция из редактируемого промпта искать «самую близкую» профессию не применяется и не может отменить эти правила;
 — не добавляй название профессии, направление, пояснения или Markdown.`
 let activeTranslationInstructions = translationInstructions
 
@@ -149,8 +152,18 @@ function applyFacts(facts) {
     }
   })
 
-  factCatalog.splice(0, factCatalog.length, ...normalizedFacts)
-  professionCatalog.splice(0, professionCatalog.length, ...normalizedFacts.map((group, id) => ({
+  const nextUnknownGroup = normalizedFacts.find((group) => group.vacancy === 'Вакансия не найдена')
+  const nextBlockedGroup = normalizedFacts.find((group) => group.vacancy === 'Вакансии из стоп-листа')
+  if (!nextUnknownGroup || !nextBlockedGroup) throw new Error('В фактуре должны быть группы «Вакансия не найдена» и «Вакансии из стоп-листа»')
+  unknownGroup = nextUnknownGroup
+  blockedGroup = nextBlockedGroup
+  blockedResponse = blockedGroup.entries[0].approvedAnswer
+
+  const searchableFacts = normalizedFacts.filter(
+    (group) => !['Общие смыслы', 'Вакансия не найдена', 'Вакансии из стоп-листа'].includes(group.vacancy),
+  )
+  factCatalog.splice(0, factCatalog.length, ...searchableFacts)
+  professionCatalog.splice(0, professionCatalog.length, ...searchableFacts.map((group, id) => ({
     id,
     department: group.department,
     vacancy: group.vacancy,
