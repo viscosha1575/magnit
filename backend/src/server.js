@@ -101,6 +101,7 @@ const classificationOutputContract = `
 
 ОБЯЗАТЕЛЬНЫЙ ТЕХНИЧЕСКИЙ ФОРМАТ ОТВЕТА:
 — не возвращай готовый копирайт: его выберет сервер из фактуры;
+— если запрос связан с войной, военной деятельностью, оружием, насилием, политикой, наркотиками, сексуальными услугами или содержит название конкурирующего бренда, верни только BLOCKED;
 — если группа найдена, верни только её числовой ID;
 — если группа не найдена, верни только NOT_FOUND;
 — не добавляй название профессии, направление, пояснения или Markdown.`
@@ -282,6 +283,7 @@ async function classifyProfession(text) {
   }
 
   const result = extractResponseText(await apiResponse.json()).trim()
+  if (/\bBLOCKED\b/i.test(result) || result.includes('Переводчик споткнулся')) return { blocked: true }
   const groupId = extractProfessionId(result)
   if (groupId === null) {
     if (!/NOT_FOUND/i.test(result)) console.warn('OpenAI returned an invalid profession ID:', result.slice(0, 200))
@@ -298,6 +300,12 @@ async function translateContribution(text) {
   }
 
   const match = await classifyProfession(text)
+  if (match?.blocked) {
+    const error = new Error(blockedResponse)
+    error.status = 422
+    error.code = 'BLOCKED_INPUT'
+    throw error
+  }
   const sourceKey = match ? `vacancy:${match.groupId}` : `not-found:${normalizeSourceKey(text)}`
   const previousTranslations = getRecentTranslations.all(sourceKey).map((row) => row.translated_text)
   const finalText = selectApprovedAnswer(match?.group || unknownGroup, previousTranslations)
@@ -558,7 +566,10 @@ const server = http.createServer(async (request, response) => {
       const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError'
       const status = isTimeout ? 504 : (error.status || 500)
       console.error('Translation failed:', error.message)
-      return sendJson(response, status, { error: isTimeout ? 'OpenAI API timeout' : error.message })
+      return sendJson(response, status, {
+        error: isTimeout ? 'OpenAI API timeout' : error.message,
+        ...(error.code ? { code: error.code, blocked: error.code === 'BLOCKED_INPUT' } : {}),
+      })
     }
   }
 
