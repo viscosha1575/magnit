@@ -233,8 +233,13 @@
     object-fit: contain;
   }
 
-  .impact__actions button {
+  .impact__actions button,
+  .impact__actions a {
+    display: grid;
+    height: 3rem;
     min-height: 3rem;
+    padding-block: 0;
+    place-items: center;
   }
 }
 
@@ -245,7 +250,8 @@
   .impact__heading img { width: 20.5rem; }
   .impact__dots { margin: clamp(.75rem, 2vh, 1.25rem) 0; }
   .impact__actions { gap: .8rem; }
-  .impact__actions button { padding-block: .8rem; font-size: 20px; }
+  .impact__actions button,
+  .impact__actions a { padding-block: 0; font-size: 20px; }
 }
 
 @media (max-width: 899px) {
