@@ -1229,17 +1229,6 @@
   .share-modal__preview-subtitle img { display: block; width: 3.35cqw; height: 3.35cqw; object-fit: contain; filter: brightness(0) invert(1); }
   .share-modal__preview-subtitle span { display: block; white-space: nowrap; }
   .share-modal__preview .share-stack { position: absolute; top: 19cqw; left: 45%; width: 42.69cqw; margin: 0; transform: translateX(-50%) scale(1.07) rotate(-7deg); transform-origin: top center; }
-  .share-modal__preview .share-stack__source { padding: 2.32cqw; border-radius: 1.85cqw; }
-  .share-modal__preview .share-stack__label,
-  .share-modal__preview .share-stack__brand { gap: 1.49cqw; font-size: 1.65cqw; }
-  .share-modal__preview .share-stack__label img { width: 2.97cqw; }
-  .share-modal__preview .share-stack__result { padding: 2.32cqw; border-radius: 1.85cqw; }
-  .share-modal__preview .share-stack__brand img { width: 2.09cqw; }
-  .share-modal__preview .share-stack__panel { bottom: 2.09cqw; padding: 2.32cqw; border-radius: 2.78cqw; }
-  .share-modal__preview .share-stack__source-count { font-size: 1.8cqw; }
-  .share-modal__preview .share-stack__result-text { padding: 2.09cqw 2.32cqw; }
-  .share-modal__preview .share-stack__result-text > span,
-  .share-modal__preview .share-stack__result strong { font-size: 7.8cqw; }
   .share-modal__preview-mark { position: absolute; right: 3.71cqw; bottom: 2.78cqw; left: 3.71cqw; display: grid; height: 2.78cqw; grid-template-columns: 2.78cqw 50% 2.78cqw; grid-template-rows: 2.78cqw; align-items: center; justify-content: center; gap: .55cqw; }
   .share-modal__preview-mark img { width: 100%; height: 2.78cqw; object-fit: contain; filter: brightness(0) invert(1); }
   .share-modal__preview-mark span { display: block; width: 100%; height: 2px; align-self: center; justify-self: center; background: #fff; }
