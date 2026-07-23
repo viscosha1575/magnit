@@ -76,7 +76,15 @@ function ShareCards({
       window.cancelAnimationFrame(animationFrame)
       animationFrame = window.requestAnimationFrame(() => {
         if (sourceCopy && sourceValue) {
-          sourceCopy.style.fontSize = `${getSourceTextLayout(sourceValue).size}px`
+          const sourceLayout = getSourceTextLayout(sourceValue)
+          const isDesktopPreview = Boolean(
+            sourcePanelRef.current?.closest('.share-modal__preview')
+            && window.matchMedia('(min-width: 900px)').matches
+          )
+          const previewScale = isDesktopPreview && sourceLayout.lines.length > 1
+            ? Math.max(.7, 1 - (sourceLayout.lines.length - 1) * .16)
+            : 1
+          sourceCopy.style.fontSize = `${sourceLayout.size * previewScale}px`
         }
         targets.forEach(([panel, copy]) => fitText(panel, copy))
       })
