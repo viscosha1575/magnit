@@ -113,8 +113,8 @@ export async function createResultImage(inputText, translatedText) {
   context.fillStyle = '#1d1d1d'; context.font = '500 28px "Arha Magnit", Arial'; context.fillText('Для всех', -170, -94)
   context.strokeStyle = '#ccc'; context.lineWidth = 2; roundRect(context, -230, -65, 460, 190, 32, false)
   context.fillStyle = '#1d1d1d'
-  const arrowWidth = 101
-  const arrowHeight = 85
+  const arrowWidth = 116
+  const arrowHeight = 98
   const arrowGap = 4
   const sourceImageSize = sourceTextLayout.size * SOURCE_TEXT_LAYOUT.imageScale
   const sourceLayout = drawText(context, inputText, -195, -15, 390, SOURCE_TEXT_LAYOUT.height * SOURCE_TEXT_LAYOUT.imageScale, {
