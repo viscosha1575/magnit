@@ -1,9 +1,10 @@
 import http from 'node:http'
-import { createHmac, timingSafeEqual } from 'node:crypto'
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DatabaseSync } from 'node:sqlite'
+import { Kafka, logLevel, Partitioners } from 'kafkajs'
 import translationConfig from './translation-config.json' with { type: 'json' }
 import stopwordsConfig from './stopwords-config.json' with { type: 'json' }
 
@@ -35,6 +36,19 @@ database.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_translations_source_created
     ON translations (source_key, id DESC);
+  CREATE TABLE IF NOT EXISTS translation_jobs (
+    id TEXT PRIMARY KEY,
+    source_text TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'queued',
+    translated_text TEXT,
+    error_code TEXT,
+    error_message TEXT,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS idx_translation_jobs_status_created
+    ON translation_jobs (status, created_at);
 `)
 
 const insertLog = database.prepare(`
@@ -59,11 +73,45 @@ const insertTranslation = database.prepare(`
   INSERT INTO translations (source_key, source_text, translated_text)
   VALUES (?, ?, ?)
 `)
+const insertTranslationJob = database.prepare(`
+  INSERT INTO translation_jobs (id, source_text, status)
+  VALUES (?, ?, 'queued')
+`)
+const getTranslationJob = database.prepare(`
+  SELECT id, source_text, status, translated_text, error_code, error_message, attempts, created_at, updated_at
+  FROM translation_jobs
+  WHERE id = ?
+`)
+const markTranslationJobProcessing = database.prepare(`
+  UPDATE translation_jobs
+  SET status = 'processing', attempts = attempts + 1, updated_at = CURRENT_TIMESTAMP
+  WHERE id = ? AND status IN ('queued', 'processing')
+`)
+const completeTranslationJob = database.prepare(`
+  UPDATE translation_jobs
+  SET status = 'completed', translated_text = ?, error_code = NULL, error_message = NULL, updated_at = CURRENT_TIMESTAMP
+  WHERE id = ?
+`)
+const failTranslationJob = database.prepare(`
+  UPDATE translation_jobs
+  SET status = ?, error_code = ?, error_message = ?, updated_at = CURRENT_TIMESTAMP
+  WHERE id = ?
+`)
+const requeueTranslationJob = database.prepare(`
+  UPDATE translation_jobs
+  SET status = 'queued', error_code = ?, error_message = ?, updated_at = CURRENT_TIMESTAMP
+  WHERE id = ?
+`)
 
 const port = Number(process.env.PORT || 3001)
 const allowedOrigin = process.env.CORS_ORIGIN || '*'
 const openAiApiKey = process.env.OPENAI_API_KEY || ''
 const openAiModel = process.env.OPENAI_MODEL || 'gpt-5.4-mini'
+const kafkaBrokers = (process.env.KAFKA_BROKERS || '').split(',').map((value) => value.trim()).filter(Boolean)
+const kafkaTopic = process.env.KAFKA_TRANSLATION_TOPIC || 'magnit.translation.requests.v1'
+const kafkaPartitions = Math.max(1, Number(process.env.KAFKA_PARTITIONS) || 8)
+const translationWorkerConcurrency = Math.max(1, Math.min(Number(process.env.TRANSLATION_WORKER_CONCURRENCY) || 8, kafkaPartitions))
+const translationMaxAttempts = Math.max(1, Math.min(Number(process.env.TRANSLATION_MAX_ATTEMPTS) || 5, 10))
 const testPanelEnabled = process.env.ENABLE_TEST_PANEL !== 'false'
 const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN || ''
 const adminTelegramIds = new Set(
@@ -447,11 +495,126 @@ async function translateContribution(text) {
   return finalText
 }
 
+let kafkaProducer = null
+let kafkaConsumer = null
+let kafkaReady = false
+
+async function processTranslationJob(jobId) {
+  const job = getTranslationJob.get(jobId)
+  if (!job || ['completed', 'blocked'].includes(job.status)) return
+
+  markTranslationJobProcessing.run(jobId)
+  try {
+    if (isBlockedInput(job.source_text)) {
+      failTranslationJob.run('blocked', 'BLOCKED_INPUT', blockedResponse, jobId)
+      return
+    }
+
+    const translatedText = await translateContribution(job.source_text)
+    completeTranslationJob.run(translatedText, jobId)
+  } catch (error) {
+    const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError'
+    const code = error.code || (isTimeout ? 'UPSTREAM_TIMEOUT' : 'TRANSLATION_FAILED')
+    const message = isTimeout ? 'OpenAI API timeout' : error.message
+    const nextAttempt = job.attempts + 1
+    if (code !== 'BLOCKED_INPUT' && nextAttempt < translationMaxAttempts && kafkaProducer) {
+      requeueTranslationJob.run(code, message, jobId)
+      await new Promise((resolveDelay) => setTimeout(resolveDelay, Math.min(8000, 500 * (2 ** nextAttempt))))
+      await kafkaProducer.send({
+        topic: kafkaTopic,
+        acks: -1,
+        messages: [{ key: jobId, value: JSON.stringify({ jobId }) }],
+      })
+      return
+    }
+    failTranslationJob.run(code === 'BLOCKED_INPUT' ? 'blocked' : 'failed', code, message, jobId)
+    console.error(`Translation job ${jobId} failed:`, message)
+  }
+}
+
+async function startKafkaQueue() {
+  if (!kafkaBrokers.length) return
+
+  const kafka = new Kafka({
+    clientId: `magnit-translator-${process.pid}`,
+    brokers: kafkaBrokers,
+    logLevel: logLevel.WARN,
+  })
+  const admin = kafka.admin()
+  await admin.connect()
+  const topics = await admin.listTopics()
+  if (!topics.includes(kafkaTopic)) {
+    await admin.createTopics({
+      waitForLeaders: true,
+      topics: [{
+        topic: kafkaTopic,
+        numPartitions: kafkaPartitions,
+        replicationFactor: 1,
+        configEntries: [
+          { name: 'retention.ms', value: '86400000' },
+          { name: 'cleanup.policy', value: 'delete' },
+        ],
+      }],
+    })
+  }
+  await admin.disconnect()
+
+  kafkaProducer = kafka.producer({
+    allowAutoTopicCreation: false,
+    idempotent: true,
+    maxInFlightRequests: 1,
+    createPartitioner: Partitioners.DefaultPartitioner,
+  })
+  kafkaConsumer = kafka.consumer({
+    groupId: 'magnit-translation-workers-v1',
+    allowAutoTopicCreation: false,
+    sessionTimeout: 30_000,
+  })
+  await kafkaProducer.connect()
+  await kafkaConsumer.connect()
+  await kafkaConsumer.subscribe({ topic: kafkaTopic, fromBeginning: false })
+  await kafkaConsumer.run({
+    partitionsConsumedConcurrently: translationWorkerConcurrency,
+    eachMessage: async ({ message }) => {
+      try {
+        const { jobId } = JSON.parse(message.value?.toString() || '{}')
+        if (typeof jobId === 'string' && jobId) await processTranslationJob(jobId)
+      } catch (error) {
+        console.error('Invalid translation queue message:', error.message)
+      }
+    },
+  })
+  kafkaReady = true
+  console.log(`Kafka translation queue ready: ${kafkaTopic}, concurrency=${translationWorkerConcurrency}`)
+}
+
+async function enqueueTranslation(text) {
+  if (!kafkaReady || !kafkaProducer) {
+    const error = new Error('Translation queue is temporarily unavailable')
+    error.status = 503
+    throw error
+  }
+
+  const jobId = randomUUID()
+  insertTranslationJob.run(jobId, text)
+  try {
+    await kafkaProducer.send({
+      topic: kafkaTopic,
+      acks: -1,
+      messages: [{ key: jobId, value: JSON.stringify({ jobId }) }],
+    })
+  } catch (error) {
+    failTranslationJob.run('failed', 'QUEUE_UNAVAILABLE', error.message, jobId)
+    throw error
+  }
+  return jobId
+}
+
 function sendJson(response, status, payload) {
   response.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-Telegram-Init-Data',
+    'Access-Control-Allow-Headers': 'Content-Type, Prefer, X-Telegram-Init-Data',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   })
   response.end(JSON.stringify(payload))
@@ -693,6 +856,15 @@ const server = http.createServer(async (request, response) => {
         })
       }
 
+      if (kafkaBrokers.length && request.headers.prefer === 'respond-async') {
+        const jobId = await enqueueTranslation(text.trim())
+        return sendJson(response, 202, {
+          jobId,
+          status: 'queued',
+          statusUrl: `/api/translate/jobs/${jobId}`,
+        })
+      }
+
       const translatedText = await translateContribution(text.trim())
       return sendJson(response, 200, { sourceText: text.trim(), translatedText })
     } catch (error) {
@@ -704,6 +876,19 @@ const server = http.createServer(async (request, response) => {
         ...(error.code ? { code: error.code, blocked: error.code === 'BLOCKED_INPUT' } : {}),
       })
     }
+  }
+
+  const translationJobMatch = url.pathname.match(/^\/api\/translate\/jobs\/([0-9a-f-]{36})$/i)
+  if (request.method === 'GET' && translationJobMatch) {
+    const job = getTranslationJob.get(translationJobMatch[1])
+    if (!job) return sendJson(response, 404, { error: 'Translation job not found' })
+    return sendJson(response, 200, {
+      jobId: job.id,
+      status: job.status,
+      ...(job.translated_text ? { translatedText: job.translated_text } : {}),
+      ...(job.error_code ? { code: job.error_code } : {}),
+      ...(job.error_message ? { error: job.error_message } : {}),
+    })
   }
 
   if (request.method === 'POST' && url.pathname === '/api/logs') {
@@ -740,6 +925,25 @@ const server = http.createServer(async (request, response) => {
   return sendJson(response, 404, { error: 'Not found' })
 })
 
-server.listen(port, '0.0.0.0', () => {
-  console.log(`Logger API: http://0.0.0.0:${port}`)
-})
+try {
+  await startKafkaQueue()
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`Logger API: http://0.0.0.0:${port}`)
+  })
+} catch (error) {
+  console.error('Failed to start translation queue:', error.message)
+  process.exit(1)
+}
+
+const shutdown = async () => {
+  kafkaReady = false
+  server.close()
+  await Promise.allSettled([
+    kafkaConsumer?.disconnect(),
+    kafkaProducer?.disconnect(),
+  ])
+  database.close()
+  process.exit(0)
+}
+process.once('SIGTERM', shutdown)
+process.once('SIGINT', shutdown)

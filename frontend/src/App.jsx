@@ -344,7 +344,10 @@ function App() {
     try {
       const response = await fetch('/api/translate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Prefer: 'respond-async',
+        },
         body: JSON.stringify({ text, userId: getUserId() }),
         signal: controller.signal,
       })
@@ -355,11 +358,44 @@ function App() {
         throw requestError
       }
 
-      setTranslatedText(payload.translatedText)
+      let result = payload
+      if (response.status === 202 && payload.statusUrl) {
+        const startedAt = Date.now()
+        let pollAttempt = 0
+        while (result.status === 'queued' || result.status === 'processing') {
+          if (Date.now() - startedAt > 10 * 60 * 1000) throw new Error('Перевод всё ещё находится в очереди')
+          const pollDelay = Math.min(5000, 750 + pollAttempt * 250)
+          await new Promise((resolve, reject) => {
+            const onAbort = () => {
+              window.clearTimeout(timer)
+              reject(new DOMException('Aborted', 'AbortError'))
+            }
+            const timer = window.setTimeout(() => {
+              controller.signal.removeEventListener('abort', onAbort)
+              resolve()
+            }, pollDelay)
+            controller.signal.addEventListener('abort', onAbort, { once: true })
+          })
+          const statusResponse = await fetch(payload.statusUrl, {
+            headers: { Accept: 'application/json' },
+            signal: controller.signal,
+          })
+          result = await statusResponse.json()
+          if (!statusResponse.ok || ['failed', 'blocked'].includes(result.status)) {
+            const requestError = new Error(result.error || 'Не удалось выполнить перевод')
+            requestError.code = result.code
+            throw requestError
+          }
+          pollAttempt += 1
+        }
+      }
+      if (!result.translatedText) throw new Error('Сервис не вернул результат перевода')
+
+      setTranslatedText(result.translatedText)
       setIsResultShareable(true)
       lastTranslatedSourceRef.current = text
-      animateTranslation(payload.translatedText)
-      logEvent('translation_succeeded', 'next', { resultLength: payload.translatedText.length, trigger })
+      animateTranslation(result.translatedText)
+      logEvent('translation_succeeded', 'next', { resultLength: result.translatedText.length, trigger })
     } catch (error) {
       if (error.name === 'AbortError') {
         logEvent('translation_cancelled', 'next', { trigger })

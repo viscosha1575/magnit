@@ -1,4 +1,35 @@
 services:
+  kafka:
+    image: apache/kafka:4.1.1
+    restart: unless-stopped
+    hostname: kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:19092
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENERS: CONTROLLER://:29093,PLAINTEXT://:19092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_LOG_SEGMENT_BYTES: 134217728
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_HEAP_OPTS: -Xms512m -Xmx1024m
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:19092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
   traefik:
     image: traefik:v3.6
     restart: unless-stopped
@@ -22,11 +53,19 @@ services:
     build:
       context: ./backend
     restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
     environment:
       PORT: 3001
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.4-mini}
+      KAFKA_BROKERS: kafka:19092
+      KAFKA_TRANSLATION_TOPIC: magnit.translation.requests.v1
+      KAFKA_PARTITIONS: ${KAFKA_PARTITIONS:-8}
+      TRANSLATION_WORKER_CONCURRENCY: ${TRANSLATION_WORKER_CONCURRENCY:-8}
+      TRANSLATION_MAX_ATTEMPTS: ${TRANSLATION_MAX_ATTEMPTS:-5}
       ENABLE_TEST_PANEL: ${ENABLE_TEST_PANEL:-true}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       ADMIN_TELEGRAM_IDS: ${ADMIN_TELEGRAM_IDS:-434092620,612078835,741068321}
@@ -83,4 +122,5 @@ services:
 
 volumes:
   backend-data:
+  kafka-data:
   traefik-certificates:
