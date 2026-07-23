@@ -6,7 +6,7 @@ export default function ShareModal({ inputText, translatedText, downloadStatus, 
       <div className="share-modal__panel">
         <button className="share-modal__close" type="button" aria-label="Закрыть" onClick={onClose}>×</button>
         <div className="share-modal__preview">
-          <img className="share-modal__preview-title" src="/svg/your-work2.svg?v=20260722" alt="" />
+          <img className="share-modal__preview-title" src="/svg/moya_rabota.svg?v=20260723-4" alt="" />
           <div className="share-modal__preview-subtitle"><img src="/svg/star2.svg?v=20260722" alt="" /><span>влияет на жизнь<br />миллионов</span></div>
           <ShareCards sourceValue={inputText} sourceCount={`${inputText.length}/200`} resultValue={translatedText} />
           <div className="share-modal__preview-mark"><img src="/svg/magnit.svg?v=20260722" alt="" /><span /><img src="/svg/star2.svg?v=20260722" alt="" /></div>

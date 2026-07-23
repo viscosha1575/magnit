@@ -89,7 +89,7 @@ export async function createResultImage(inputText, translatedText) {
   await document.fonts?.ready
   const sourceTextLayout = getSourceTextLayout(inputText)
   const [title, star, logo, audience] = await Promise.all([
-    loadSvg(asset('moya_rabota.svg'), (svg) => svg.replace(/<defs>[\s\S]*?<\/defs>/, '').replace(/<style>[\s\S]*?<\/style>/, '')),
+    loadSvg('/svg/moya_rabota.svg?v=20260723-4', (svg) => svg.replace(/<defs>[\s\S]*?<\/defs>/, '').replace(/<style>[\s\S]*?<\/style>/, '')),
     loadImage(asset('star2.svg')),
     loadSvg(asset('magnit.svg'), (svg) => svg.replace(/#[0-9a-f]{6}/gi, '#FFFFFF')),
     loadImage(asset('all.svg')),

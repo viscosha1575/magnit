@@ -7,7 +7,9 @@ export default function SharePage({ inputText, translatedText, downloadStatus, i
       <section className="share-view">
         <button className="share-view__back" type="button" aria-label="Вернуться" onClick={() => window.history.back()}><img src="/svg/back.svg?v=20260722" alt="" /></button>
         <div className="share-view__heading">
-          <img src="/svg/your-work2.svg?v=20260722" alt="" />
+          <div className="share-view__heading-logo" aria-hidden="true">
+            <img className="share-view__heading-word" src="/svg/moya_rabota_mobile.svg?v=20260723-4" alt="" />
+          </div>
           <h2><img className="share-view__asterisk" src="/svg/star2.svg?v=20260722" alt="" /><span className="share-view__heading-text">влияет на жизнь<br />миллионов</span></h2>
         </div>
         <div className="share-view__cards"><ShareCards sourceValue={inputText} sourceCount={`${inputText.length}/200`} resultValue={translatedText} /></div>
