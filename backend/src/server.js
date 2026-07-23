@@ -89,6 +89,9 @@ let logisticsGroupId = factCatalog.findIndex(
 let retailCashierGroupId = factCatalog.findIndex(
   (group) => group.vacancy.includes('Продавец-кассир'),
 )
+let serviceRoleGroupId = factCatalog.findIndex(
+  (group) => group.vacancy.includes('Сторож') && group.vacancy.includes('Уборщик'),
+)
 const translationInstructions = `Ты — строгий классификатор профессий проекта «Твоя работа влияет на жизнь миллионов».
 
 Работай только по этому алгоритму:
@@ -245,6 +248,9 @@ function applyFacts(facts) {
   retailCashierGroupId = factCatalog.findIndex(
     (group) => group.vacancy.includes('Продавец-кассир'),
   )
+  serviceRoleGroupId = factCatalog.findIndex(
+    (group) => group.vacancy.includes('Сторож') && group.vacancy.includes('Уборщик'),
+  )
 }
 
 function applyTestSettings(settings = {}) {
@@ -324,6 +330,8 @@ function extractProfessionId(value) {
 
 function selectApprovedAnswer(group, previousTranslations) {
   const approvedAnswers = group.entries.map((entry) => entry.approvedAnswer)
+  if (approvedAnswers.length === 1) return approvedAnswers[0]
+
   const previousAnswer = previousTranslations[0] || ''
   const alternatives = approvedAnswers.filter((answer) => answer !== previousAnswer)
   if (alternatives.length) return alternatives[Math.floor(Math.random() * alternatives.length)]
@@ -339,6 +347,12 @@ function selectApprovedAnswer(group, previousTranslations) {
 
 async function classifyProfession(text) {
   const normalizedText = normalizeForSafety(text)
+  if (
+    serviceRoleGroupId >= 0
+    && /(?:^|\s)(?:сторож[а-я]*|уборщ[а-я]*|дворник[а-я]*|вахтер[а-я]*|гардеробщ[а-я]*|клинер[а-я]*)(?:\s|$)/.test(normalizedText)
+  ) {
+    return { groupId: serviceRoleGroupId, group: factCatalog[serviceRoleGroupId] }
+  }
   if (
     retailCashierGroupId >= 0
     && /(?:^|\s)(?:кассир|кассира|кассиру|кассиром|кассире|кассиры|кассиров|кассирам|кассирами|кассирах)(?:\s|$)/.test(normalizedText)
