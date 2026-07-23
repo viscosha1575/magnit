@@ -1,22 +1,22 @@
-.share-stack { position: relative; width: 370.45px; max-width: 100%; height: auto; aspect-ratio: 370.45 / 393.3; margin: 1rem auto 0; transform: translateY(-3.5rem) rotate(-7deg); container-type: inline-size; }
+.share-stack { position: relative; width: 370.45px; max-width: 100%; height: auto; aspect-ratio: 370.45 / 393.3; margin: 1rem auto 0; transform: translateY(-3.5rem) rotate(-7deg); }
 .share-stack__source,
 .share-stack__result { position: absolute; width: 88%; border-radius: 2rem; box-shadow: 0 1rem 1.5rem rgba(100,0,0,.18); }
-.share-stack__source { top: 0; left: 50%; width: 88%; height: auto; aspect-ratio: 540 / 330; box-sizing: border-box; padding: 5.4cqw; border-radius: 5.53cqw; color: #1d1d1d; background: #fff; transform: translateX(-50%); }
-.share-stack__label { position: relative; z-index: 1; display: flex; align-items: center; gap: 3.5cqw; color: #1a1a1a; text-align: center; font-family: 'Arha Magnit', Arial, sans-serif; font-size: 4.56cqw; font-style: normal; font-weight: 500; line-height: 80%; }
-.share-stack__label img { width: 6.86cqw; }
-.share-stack__panel { position: absolute; right: auto; bottom: 6.48cqw; left: 50%; display: grid; width: 85.185%; height: auto; margin: 0; border: 1px solid #ccc; border-radius: 5.21cqw; place-content: start; color: #1d1d1d; background: #fff; transform: translateX(-50%); container-type: inline-size; }
-.share-stack__source-text { z-index: 1; display: block; min-width: 0; aspect-ratio: 460 / 190; padding: 5.67cqw; overflow: visible; font-size: 5.53cqw; font-weight: 400; line-height: 1; }
+.share-stack__source { top: 0; left: 50%; width: 326px; max-width: 88%; height: auto; aspect-ratio: 326 / 204; box-sizing: border-box; padding: 20px; border-radius: 24px; color: #1d1d1d; background: #fff; transform: translateX(-50%); }
+.share-stack__label { position: relative; z-index: 1; display: flex; align-items: center; gap: .8rem; color: #1a1a1a; text-align: center; font-family: 'Arha Magnit', Arial, sans-serif; font-size: 16px; font-style: normal; font-weight: 500; line-height: 80%; transform: translateY(-.6rem); }
+.share-stack__label img { width: 1.6rem; }
+.share-stack__panel { position: absolute; right: auto; bottom: 1.5rem; left: 50%; display: grid; width: 88.65%; height: auto; aspect-ratio: 289 / 135; margin: 0; padding: 20px; border: 1px solid #ccc; border-radius: 2rem; place-content: start; color: #1d1d1d; background: #fff; transform: translateX(-50%); container-type: inline-size; }
+.share-stack__source-text { z-index: 1; bottom: 18px; display: block; min-width: 0; padding: 20px; border-radius: 24px; overflow: visible; font-size: 1.35rem; font-weight: 400; line-height: 1; }
 .share-stack__source-copy { position: relative; z-index: 2; display: block; }
 .share-stack__source-copy--dynamic { display: block; box-sizing: border-box; width: 100%; min-width: 100%; max-width: 100%; height: auto; max-height: 100%; overflow: hidden; overflow-wrap: anywhere; font-size: 8.65cqw; line-height: 112%; text-align: left; white-space: pre-wrap; }
 .share-stack__source-copy--dynamic > span { display: inline; max-width: none; }
 .share-stack__source-accent { position: relative; display: inline-block; }
 .share-stack__source-accent svg { position: absolute; z-index: -1; top: 50%; left: 50%; width: calc(100% + .55em); height: 1.05em; overflow: visible; fill: none; stroke: #e30613; stroke-width: 1; transform: translate(-50%, -48%); }
-.share-stack__source-arrow { position: absolute; z-index: 4; top: 13.3cqw; right: 7.56cqw; display: block; width: 12.6cqw; min-width: 0; max-width: none; height: auto; aspect-ratio: 46 / 47; overflow: visible; pointer-events: none; }
-.share-stack__source-count { display: none; }
-.share-stack__result { z-index: 2; top: 75%; right: 2%; bottom: auto; width: 88%; height: auto; min-height: 0; aspect-ratio: 540 / 350; box-sizing: border-box; padding: 5.4cqw; border-radius: 5.53cqw; color: #fff; background: #ed001b; box-shadow: 0 1.25rem 2rem rgba(112, 0, 8, .32), 0 .35rem .8rem rgba(112, 0, 8, .18); transform: rotate(13deg); transform-origin: center; }
-.share-stack__brand { display: flex; align-items: center; gap: 3.5cqw; color: #fff; text-align: center; font-family: 'Arha Magnit', Arial, sans-serif; font-size: 4.56cqw; font-style: normal; font-weight: 500; line-height: 80%; }
-.share-stack__brand img { width: 6.21cqw; filter: brightness(0) invert(1); }
-.share-stack__result-text { box-sizing: border-box; aspect-ratio: 460 / 210; padding: 4.86cqw 6.21cqw; overflow: hidden; place-content: stretch; }
+.share-stack__source-arrow { position: absolute; z-index: 4; top: 42%; right: 11%; display: block; width: 20%; min-width: 0; max-width: none; height: auto; aspect-ratio: 46 / 47; overflow: visible; pointer-events: none; }
+.share-stack__source-count { position: absolute; bottom: 18px; left: 20px; color: #888; font-size: 1.15rem; line-height: 1; }
+.share-stack__result { z-index: 2; top: 75%; right: 2%; bottom: auto; width: 326px; max-width: 100%; height: auto; min-height: 0; aspect-ratio: 326 / 209; box-sizing: border-box; padding: 20px; border-radius: 24px; color: #fff; background: #e9001b; box-shadow: 0 1.25rem 2rem rgba(112, 0, 8, .32), 0 .35rem .8rem rgba(112, 0, 8, .18); transform: rotate(13.621deg); transform-origin: center; }
+.share-stack__brand { display: flex; align-items: center; gap: .8rem; color: #fff; text-align: center; font-family: 'Arha Magnit', Arial, sans-serif; font-size: 16px; font-style: normal; font-weight: 500; line-height: 80%; }
+.share-stack__brand img { width: 18px; filter: brightness(0) invert(1); }
+.share-stack__result-text { bottom: 18px; box-sizing: border-box; padding: 18px 20px; border-radius: 24px; overflow: hidden; place-content: stretch; }
 .share-stack__result-text > span { display: block; width: 100%; height: 100%; color: #1a1a1a; font-family: 'Arha Magnit', Arial, sans-serif; font-size: 8.8cqw; font-style: normal; font-weight: 600; line-height: 100%; white-space: nowrap; }
 .share-stack__result strong { color: #e2000f; font-family: 'Arha Magnit', Arial, sans-serif; font-size: 8.8cqw; font-style: normal; font-weight: 600; line-height: 100%; }
 .share-stack__result-text > .share-stack__result-copy--dynamic { height: auto; max-height: 100%; overflow: hidden; overflow-wrap: anywhere; font-size: 8.2cqw; line-height: 98%; white-space: normal; }

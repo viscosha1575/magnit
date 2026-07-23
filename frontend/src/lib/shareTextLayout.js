@@ -1,10 +1,10 @@
 export const SOURCE_TEXT_LAYOUT = Object.freeze({
-  width: 390 * 326 / 540,
-  height: 55 * 326 / 540,
-  maximumSize: 34 * 326 / 540,
-  minimumSize: 4 * 326 / 540,
+  width: 249,
+  height: 35,
+  maximumSize: 21.6,
+  minimumSize: 4,
   lineHeightRatio: 1,
-  imageScale: 540 / 326,
+  imageScale: 390 / 249,
 })
 
 const splitWrappedLines = (context, text, maxWidth) => {
