@@ -116,8 +116,8 @@ export async function createResultImage(inputText, translatedText) {
   const arrowWidth = 128.2
   const arrowHeight = 108.3
   const arrowGap = 18
-  const arrowLeft = 195 - arrowWidth
-  const sourceTextWidth = 390 - arrowWidth - arrowGap
+  const sourceTextWidth = 390 * .8
+  const arrowLeft = -195 + sourceTextWidth + arrowGap
   const sourceImageSize = sourceTextLayout.size * SOURCE_TEXT_LAYOUT.imageScale
   drawText(context, inputText, -195, -15, sourceTextWidth, SOURCE_TEXT_LAYOUT.height * SOURCE_TEXT_LAYOUT.imageScale, {
     maximumSize: sourceImageSize,
