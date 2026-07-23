@@ -1236,6 +1236,14 @@
   .share-modal__preview .share-stack__result { padding: 2.32cqw; border-radius: 1.85cqw; }
   .share-modal__preview .share-stack__brand img { width: 2.09cqw; }
   .share-modal__preview .share-stack__panel { bottom: 2.09cqw; padding: 2.32cqw; border-radius: 2.78cqw; }
+  .share-modal__preview .share-stack__source-text { padding: 0; }
+  .share-modal__preview .share-stack__source-copy--dynamic {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 100%;
+    max-width: none;
+    padding: 6.92cqw;
+  }
   .share-modal__preview .share-stack__source-count { font-size: 1.8cqw; }
   .share-modal__preview .share-stack__result-text { padding: 2.09cqw 2.32cqw; }
   .share-modal__preview .share-stack__result-text > span,
