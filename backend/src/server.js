@@ -111,6 +111,7 @@ const classificationOutputContract = `
 — если запрос связан с войной, военной деятельностью, оружием, насилием, политикой, наркотиками, сексуальными услугами, содержит любую страну, национальность или название конкурирующего бренда (включая X5/Х5), верни только BLOCKED;
 — проверяй на страну и национальность весь запрос целиком, включая любые падежи, род, число, дефисы и сочетания с профессией;
 — наличие распознанной профессии никогда не отменяет блокировку. Примеры: «кассир русский», «русский кассир», «кассир — казах», «продавец из России», «уборщица украинка» → только BLOCKED;
+— если страна или национальность написана с опечаткой, в том числе с одной пропущенной, лишней или заменённой буквой, считай её запрещённой и верни только BLOCKED;
 — сначала ищи прямое совпадение профессии, включая падеж, число, род и общеупотребимые варианты названия;
 — если прямого совпадения нет, выбери наиболее близкую группу по реальным обязанностям и направлению работы;
 — выбирай похожую профессию только при ясном профессиональном соответствии, а не по одному случайному слову;
@@ -193,6 +194,9 @@ const configuredForbiddenTerms = stopwordsConfig.categories.flatMap((category) =
 ])
 const forbiddenWords = new Set()
 const forbiddenPhrases = new Set()
+const fuzzyGeographyTerms = [...new Set(
+  geographyTerms.filter((term) => !term.includes(' ') && term.length >= 5),
+)]
 for (const value of [...configuredForbiddenTerms, ...geographyTerms]) {
   if (!value) continue
   if (value.includes(' ')) forbiddenPhrases.add(value)
@@ -280,6 +284,28 @@ function isBlockedInput(text) {
   const normalized = normalizeForSafety(text)
   const words = normalized.split(/\s+/).filter(Boolean)
   if (words.some((word) => forbiddenWords.has(word))) return true
+  if (words.some((word) => word.length >= 4 && fuzzyGeographyTerms.some((term) => {
+    if (Math.abs(word.length - term.length) > 1) return false
+    let left = 0
+    let right = 0
+    let edits = 0
+    while (left < word.length && right < term.length) {
+      if (word[left] === term[right]) {
+        left += 1
+        right += 1
+        continue
+      }
+      edits += 1
+      if (edits > 1) return false
+      if (word.length > term.length) left += 1
+      else if (term.length > word.length) right += 1
+      else {
+        left += 1
+        right += 1
+      }
+    }
+    return edits + (word.length - left) + (term.length - right) <= 1
+  }))) return true
 
   return [...forbiddenPhrases].some((phrase) => {
     const phraseLength = phrase.split(' ').length
