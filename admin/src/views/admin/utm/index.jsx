@@ -1,6 +1,5 @@
 import {
   Box,
-  Button,
   Flex,
   SimpleGrid,
   Skeleton,
@@ -18,14 +17,18 @@ import { useEffect, useMemo, useState } from "react";
 import Card from "components/card/Card";
 import MiniStatistics from "components/card/MiniStatistics";
 import BarChart from "components/charts/BarChart";
+import PeriodFilter from "components/analytics/PeriodFilter";
 import { postJson } from "api";
 import { createUtmMock, getRangePayload, shouldUseAnalyticsMocks } from "mockData";
 
 const formatNumber = (value) => new Intl.NumberFormat("ru-RU").format(Number(value) || 0);
-const PERIODS = [["today", "Сегодня"], ["7d", "7 дней"], ["30d", "30 дней"], ["all", "Всё время"]];
 
 export default function UtmPage() {
   const [range, setRange] = useState("30d");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [customRange, setCustomRange] = useState(null);
+  const [periodError, setPeriodError] = useState("");
   const [response, setResponse] = useState({ summary: {}, items: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -37,12 +40,14 @@ export default function UtmPage() {
     let cancelled = false;
     setLoading(true);
     setError("");
+    const payload = range === "custom" ? customRange : getRangePayload(range);
+    if (range === "custom" && !payload) return () => { cancelled = true; };
     if (shouldUseAnalyticsMocks()) {
-      setResponse(createUtmMock(range));
+      setResponse(createUtmMock(range === "custom" ? "7d" : range));
       setLoading(false);
       return () => { cancelled = true; };
     }
-    postJson("/api/analytics/utm", getRangePayload(range))
+    postJson("/api/analytics/utm", payload)
       .then((data) => {
         if (!cancelled) {
           setResponse({ summary: data?.summary || {}, items: data?.items || [] });
@@ -57,7 +62,26 @@ export default function UtmPage() {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [range]);
+  }, [customRange, range]);
+
+  const applyCustomRange = () => {
+    if (!dateFrom || !dateTo) {
+      setPeriodError("Укажите обе даты");
+      return;
+    }
+    if (dateFrom > dateTo) {
+      setPeriodError("Дата начала не может быть позже даты окончания");
+      return;
+    }
+    setPeriodError("");
+    setCustomRange({ dateFrom, dateTo });
+    setRange("custom");
+  };
+
+  const selectPreset = (value) => {
+    setPeriodError("");
+    setRange(value);
+  };
 
   const cards = useMemo(() => [
     ["campaigns", "UTM-комбинации", response.summary?.campaigns],
@@ -91,20 +115,17 @@ export default function UtmPage() {
     <Box pt={{ base: "0", md: "80px" }}>
       <Stack spacing="20px">
         <Flex align="end" justify="flex-end" gap="12px" wrap="wrap">
-          <Flex gap="8px" wrap="wrap">
-            {PERIODS.map(([value, label]) => (
-              <Button
-                key={value}
-                size="sm"
-                borderRadius="10px"
-                colorScheme="brand"
-                variant={range === value ? "solid" : "outline"}
-                onClick={() => setRange(value)}
-              >
-                {label}
-              </Button>
-            ))}
-          </Flex>
+          <PeriodFilter
+            range={range}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onPreset={selectPreset}
+            onDateFromChange={setDateFrom}
+            onDateToChange={setDateTo}
+            onApply={applyCustomRange}
+            error={periodError}
+            secondaryColor={secondaryColor}
+          />
         </Flex>
 
         {error ? <Text color="red.500">{error}</Text> : null}

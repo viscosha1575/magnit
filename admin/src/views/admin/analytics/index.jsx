@@ -1,6 +1,5 @@
 import {
   Box,
-  Button,
   Flex,
   SimpleGrid,
   Skeleton,
@@ -18,6 +17,7 @@ import { useEffect, useMemo, useState } from "react";
 import Card from "components/card/Card";
 import MiniStatistics from "components/card/MiniStatistics";
 import LineChart from "components/charts/LineChart";
+import PeriodFilter from "components/analytics/PeriodFilter";
 import { postJson } from "api";
 import { createAnalyticsMock, getRangePayload, normalizeAnalytics, shouldUseAnalyticsMocks } from "mockData";
 
@@ -63,10 +63,13 @@ const PAGE_LABELS = {
 };
 
 const formatNumber = (value) => new Intl.NumberFormat("ru-RU").format(Number(value) || 0);
-const PERIODS = [["today", "Сегодня"], ["7d", "7 дней"], ["30d", "30 дней"], ["all", "Всё время"]];
 
 export default function AnalyticsPage() {
   const [range, setRange] = useState("7d");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [customRange, setCustomRange] = useState(null);
+  const [periodError, setPeriodError] = useState("");
   const [analytics, setAnalytics] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -78,12 +81,15 @@ export default function AnalyticsPage() {
     let cancelled = false;
     setLoading(true);
     setError("");
+    const payload = range === "custom" ? customRange : getRangePayload(range);
+    if (range === "custom" && !payload) return () => { cancelled = true; };
     if (shouldUseAnalyticsMocks()) {
-      setAnalytics({ ...EMPTY, ...normalizeAnalytics(createAnalyticsMock(range), range) });
+      const mockRange = range === "custom" ? "7d" : range;
+      setAnalytics({ ...EMPTY, ...normalizeAnalytics(createAnalyticsMock(mockRange), range) });
       setLoading(false);
       return () => { cancelled = true; };
     }
-    postJson("/api/analytics/overview", getRangePayload(range))
+    postJson("/api/analytics/overview", payload)
       .then((response) => {
         if (!cancelled) setAnalytics({ ...EMPTY, ...normalizeAnalytics(response, range) });
       })
@@ -96,7 +102,26 @@ export default function AnalyticsPage() {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [range]);
+  }, [customRange, range]);
+
+  const applyCustomRange = () => {
+    if (!dateFrom || !dateTo) {
+      setPeriodError("Укажите обе даты");
+      return;
+    }
+    if (dateFrom > dateTo) {
+      setPeriodError("Дата начала не может быть позже даты окончания");
+      return;
+    }
+    setPeriodError("");
+    setCustomRange({ dateFrom, dateTo });
+    setRange("custom");
+  };
+
+  const selectPreset = (value) => {
+    setPeriodError("");
+    setRange(value);
+  };
 
   const chartOptions = useMemo(() => ({
     chart: { toolbar: { show: false }, zoom: { enabled: false }, fontFamily: "Google Sans, sans-serif" },
@@ -130,25 +155,18 @@ export default function AnalyticsPage() {
     <Box pt={{ base: "0", md: "80px" }}>
       <Stack spacing="20px">
         <Flex align="end" justify="flex-end" gap="12px" wrap="wrap">
-          <Stack align={{ base: "stretch", sm: "end" }} spacing="6px">
-            <Flex gap="8px" wrap="wrap" justify={{ base: "flex-start", sm: "flex-end" }}>
-              {PERIODS.map(([value, label]) => (
-                <Button
-                  key={value}
-                  size="sm"
-                  borderRadius="10px"
-                  colorScheme="brand"
-                  variant={range === value ? "solid" : "outline"}
-                  onClick={() => setRange(value)}
-                >
-                  {label}
-                </Button>
-              ))}
-            </Flex>
-            <Text color={secondaryColor} fontSize="sm">
-              Обновлено: {analytics.meta?.generatedAt ? new Date(analytics.meta.generatedAt).toLocaleString("ru-RU") : "—"}
-            </Text>
-          </Stack>
+          <PeriodFilter
+            range={range}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onPreset={selectPreset}
+            onDateFromChange={setDateFrom}
+            onDateToChange={setDateTo}
+            onApply={applyCustomRange}
+            error={periodError}
+            secondaryColor={secondaryColor}
+            updatedAt={analytics.meta?.generatedAt}
+          />
         </Flex>
 
         {error ? <Text color="red.500">{error}</Text> : null}
