@@ -7,6 +7,7 @@ import { warmSecondaryArtwork } from './lib/warmAssets.js'
 const ThirdPage = lazy(() => import('./components/ThirdPage.jsx'))
 const SharePage = lazy(() => import('./components/SharePage.jsx'))
 const ShareModal = lazy(() => import('./components/ShareModal.jsx'))
+const testPanelEnabled = import.meta.env.DEV
 
 const loadImage = (source) => new Promise((resolve, reject) => {
   const image = new Image()
@@ -221,6 +222,8 @@ function App() {
   useEffect(() => warmSecondaryArtwork(), [])
 
   useEffect(() => {
+    if (!testPanelEnabled) return undefined
+
     const openTestPanel = async (event) => {
       if (
         pageRef.current !== 'next'
@@ -854,7 +857,7 @@ function App() {
             />
           </Suspense>
         )}
-        {testPanel && (
+        {testPanelEnabled && testPanel && (
           <div className="test-panel" role="dialog" aria-modal="true" aria-label="Тестовые настройки">
             <div className={`test-panel__window${testPanel === 'facts' ? ' test-panel__window--facts' : ''}`}>
               <button className="test-panel__close" type="button" aria-label="Закрыть" onClick={() => setTestPanel(null)}>×</button>

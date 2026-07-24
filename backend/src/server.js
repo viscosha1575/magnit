@@ -112,7 +112,7 @@ const kafkaTopic = process.env.KAFKA_TRANSLATION_TOPIC || 'magnit.translation.re
 const kafkaPartitions = Math.max(1, Number(process.env.KAFKA_PARTITIONS) || 8)
 const translationWorkerConcurrency = Math.max(1, Math.min(Number(process.env.TRANSLATION_WORKER_CONCURRENCY) || 8, kafkaPartitions))
 const translationMaxAttempts = Math.max(1, Math.min(Number(process.env.TRANSLATION_MAX_ATTEMPTS) || 5, 10))
-const testPanelEnabled = process.env.ENABLE_TEST_PANEL !== 'false'
+const testPanelEnabled = process.env.ENABLE_TEST_PANEL === 'true'
 const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN || ''
 const adminTelegramIds = new Set(
   (process.env.ADMIN_TELEGRAM_IDS || '434092620,612078835,741068321')
