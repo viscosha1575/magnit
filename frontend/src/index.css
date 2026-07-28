@@ -55,6 +55,16 @@
 
 * { box-sizing: border-box; }
 
+body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.text-field textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 body,
 button,
 input,

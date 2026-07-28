@@ -489,7 +489,7 @@ function App() {
       if (import.meta.env.DEV && window.__LEGACY_IMAGE_RENDERER__) {
       await document.fonts?.ready
       const [titleImage, starImage, logoImage, audienceImage] = await Promise.all([
-        loadStaticSvg('/svg/your-work2.svg?v=20260722'),
+        loadStaticSvg('/svg/moya_rabota.svg?v=20260723'),
         loadImage('/svg/star2.svg?v=20260722'),
         loadColoredSvg('/svg/magnit.svg?v=20260722', '#FFFFFF'),
         loadImage('/svg/all.svg?v=20260722'),

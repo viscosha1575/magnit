@@ -14,6 +14,7 @@ export default function ThirdPage({
   viewportRef,
   cardsRef,
 }) {
+  const [headingAnimationId] = useState(() => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`)
   const [isHeadingFontReady, setIsHeadingFontReady] = useState(
     () => !document.fonts || document.fonts.check('700 48px "Arha Magnit"'),
   )
@@ -62,8 +63,8 @@ export default function ThirdPage({
         </div>
         <div className="impact__heading">
           <picture aria-hidden="true">
-            <source media="(min-width: 900px)" srcSet="/svg/do2.svg?v=20260722" />
-            <img src="/svg/do.svg?v=20260722-2" alt="" />
+            <source media="(min-width: 900px)" srcSet={`/svg/do2.svg?v=20260722&play=${headingAnimationId}`} />
+            <img src={`/svg/do.svg?v=20260722-2&play=${headingAnimationId}`} alt="" />
           </picture>
           <h2 className="impact__title impact__title--mobile"><span>Создавай ритейл</span><span>будущего вместе</span><span>с «Магнит»</span></h2>
           <h2 className="impact__title impact__title--desktop"><span>Создавай ритейл будущего</span><span>вместе с «Магнит»</span></h2>
